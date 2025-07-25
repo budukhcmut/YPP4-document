@@ -19,15 +19,6 @@ SELECT
 FROM [User] AS u
 WHERE u.UserId = 1;
 
-
-
-
-
-FROM [User] u LEFT JOIN [File] f ON u.UserId=f.OwnerId
-LEFT JOIN [Folder] fo ON u. 
-
-
-
 --My Drive
 --get my folder
 select
