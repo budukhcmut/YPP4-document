@@ -1,170 +1,287 @@
-USE GoogleDrive ;
-GO 
--- GET SETTING USER
-select 
-	u.Name as UserName,
+USE GoogleDrive
+GO
+
+
+-- HOME SCREEN
+-- SELECT USER INFORMATION
+SELECT 
+	u.Name  UserName,
+	u.Email  Email
+FROM [User] u
+WHERE u.UserId =1 
+
+-- SELECT USER SETTING
+SELECT 
+	u.Name  UserName,
 	s.SettingKey,
 	s.SettingValue
-from SettingUser su
-join [User] u on su.UserId = u.UserId
-join Setting s on su.SettingId = s.SettingId
-where u.UserId =1 ;
+FROM SettingUser su
+JOIN [User] u ON su.UserId = u.UserId
+JOIN Setting s ON su.SettingId = s.SettingId
+WHERE u.UserId =1
 
-
---get user information
+-- SELECT LOGIN USER FILE
 SELECT 
-	u.Name ,
-	u.Email ,
-	u.LastLogin 
-FROM [User] AS u
-WHERE u.UserId = 1;
+	u.Name  UserName,
+	f.Name  FileName
+FROM [File] f 
+JOIN [User] u ON f.OwnerId = u.UserId
+WHERE u.UserId =1
 
---My Drive
---get my folder
-select
-	f.Name as FolderName,
-	f.Path as FolderPath,
-	f.UpdatedAt as FolderUpdateTime
-from Folder f
-join [User] u on f.OwnerId = u.Id
-where u.id = 1
-	and f.Status = 'active'
-order by f.UpdatedAt DESC;
-
---get my file
-select 
-	f.Name as [FileName],
-	f.Path as FilePath,
-	f.ModifiedDate as FileUpdateTime,
-	ft.Name as FileType
-from [File] f
-join [User] u on f.OwnerId = u.Id
-join FileType ft on f.FileTypeId = ft.Id
-where u.id = 1
-	and f.Status = 'active'
-order by f.ModifiedDate;
-
---get user setting
-select 
-	u.Name as UserName,
-	s.SettingKey,
-	s.SettingValue
-from SettingUser su
-join [User] u on su.UserId = u.Id
-join Setting s on su.SettingId = s.Id
-where u.Id =1
-
---Starred
---get starred
+-- SELECT LOGIN USER FOLDER
 SELECT 
-    fo.ObjectId,
-    fo.ObjectTypeId,
-    ot.Name AS ObjectType,
-	case
-		when fo.ObjectTypeId = 1 then f.Name
-		else fi.Name 
-	end as [Name]
-FROM FavoriteObject fo
-JOIN [User] u ON fo.OwnerId = u.Id
-JOIN ObjectType ot ON fo.ObjectTypeId = ot.Id
-LEFT JOIN Folder f ON fo.ObjectId = f.Id AND fo.ObjectTypeId = 1
-LEFT JOIN [File] fi ON fo.ObjectId = fi.Id AND fo.ObjectTypeId = 2
-WHERE fo.OwnerId = 1
-ORDER BY ot.Name;
+	u.Name  UserName,
+	fo.Name  FolderName
+FROM [Folder] fo
+JOIN [User] u ON fo.OwnerId = u.UserId
+WHERE u.UserId =1
 
---get recommend folder/file
-select
-	r.Id,
-	case
-		when r.ObjectTypeId = 1 then f.Name
-		else fi.Name
-	end as [Name],
-	r.Log,
-	r.DateTime
-from Recent r
-left join Folder f on f.Id = r.ObjectId and r.ObjectTypeId = 1
-left join [File] fi on fi.Id = r.ObjectId and r.ObjectTypeId = 2
-join [User] u on r.UserId = u.Id
-where u.Id = 1
-order by r.DateTime DESC;
-
-
---get recent
+-- SELECT SHARED FILE WITH LOGIN USER
 SELECT 
-    r.Id,
-    case
-		when r.ObjectTypeId = 1 then f.Name
-		else fi.Name
-	end as [Name],
-	case
-		when r.ObjectTypeId = 1 then f.Path
-		else fi.Path
-	end as [Name],
-    ft.Name AS FileType,
-    r.DateTime AS LastAccessed
-FROM Recent r
-JOIN [User] u ON r.Id = u.Id
-LEFT JOIN Folder f ON f.Id = r.ObjectId and r.ObjectTypeId = 1
-LEFT JOIN [File] fi ON fi.Id = r.ObjectId and r.ObjectTypeId =2
-JOIN FileType ft ON fi.FileTypeId = ft.Id
-WHERE r.UserId = 1
-ORDER BY r.DateTime DESC;
-
---get shared with me
-SELECT 
-    s.ObjectId,
-    s.ObjectTypeId,
-    ot.Name AS ObjectType,
-	case
-		when s.ObjectTypeId = 1 then f.Name
-		else fi.Name
-	end as [Name],
-    p.Name AS Permission,
-    u2.Name AS SharerName,
-    s.CreatedAt AS ShareCreated,
-    s.ExpiresAt AS ShareExpires
+	u.Name  UserName,
+	f.Name  FileName
 FROM SharedUser su
-JOIN Share s ON su.ShareId = s.Id
-JOIN [User] u ON su.Id = u.Id
-JOIN [User] u2 ON s.Sharer = u2.Id
-JOIN ObjectType ot ON s.ObjectTypeId = ot.Id
-JOIN Permission p ON su.PermissionId = p.Id
-LEFT JOIN Folder f ON s.ObjectId = f.Id AND s.ObjectTypeId = 1
-LEFT JOIN [File] fi ON s.ObjectId = fi.Id AND s.ObjectTypeId = 2
-WHERE su.UserId = 1
-  AND s.ExpiresAt > GETDATE()
-ORDER BY s.CreatedAt DESC;
+JOIN [User] u ON su.UserId = u.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
+WHERE su.UserId = 252
 
---get trash
-SELECT
-	t.ObjectId,
-	t.ObjectTypeId,
+-- SELECT SHARED FOLDER WITH LOGIN USER
+SELECT 
+	u.Name  UserName,
+	fo.Name  FolderName
+FROM SharedUser su
+JOIN [User] u ON su.UserId = u.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE su.UserId = 100
+
+SELECT * FROM Share WHERE ObjectTypeId = 1
+SELECT * FROM SharedUser WHERE ShareId = 2
+
+-- RECOMMENT FILE/FOLDER
+SELECT TOP 10
+	u.Name AS UserName,
+	f.Name AS FileName,
+	r.Log AS Log,
+	r.DateTime AS DateTime
+FROM Recent r
+JOIN [User] u ON r.UserId = u.UserId
+JOIN [File] f ON r.ObjectTypeId = 2 AND r.ObjectId = f.FileId
+WHERE r.UserId = 319
+ORDER BY r.DateTime DESC
+
+SELECT * FROM Recent
+
+-- RECOMMENT FOLDER
+SELECT TOP 10
+	u.Name AS UserName,
+	fo.Name AS FolderName,
+	r.Log AS Log,
+	r.DateTime AS DateTime
+FROM Recent r
+JOIN [User] u ON r.UserId = u.UserId
+JOIN [Folder] fo ON r.ObjectTypeId = 1 AND r.ObjectId = fo.FolderId
+WHERE r.UserId = 2
+ORDER BY r.DateTime DESC
+
+SELECT * FROM Recent
+
+-- TRASH SCREEN
+-- SELECT FILE HAVE BEEN DELETED
+SELECT 
+	t.TrashId,
+	ot.Name AS ObjectType,
+	f.Name AS FileName,
 	t.RemovedDatetime,
-	CASE
-		WHEN t.ObjectTypeId = 1 THEN f.Name
-		ELSE fi.Name
-	END AS [Name]
+	t.IsPermanent
 FROM Trash t
-LEFT JOIN [User] u ON t.UserId = u.UserId
 JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
-LEFT JOIN Folder f ON t.ObjectId = f.FolderId AND t.ObjectTypeId = 1
-LEFT JOIN [File] fi ON t.ObjectId = fi.FileId AND t.ObjectTypeId =2
-WHERE t.UserId = 1
-ORDER BY t.RemovedDateTime DESC;
+JOIN [File] f ON t.ObjectTypeId = 2 AND t.ObjectId = f.FileId
+WHERE t.UserId = 500;
 
---get storage
-select
-	u.Capacity,
-	u.UsedCapacity,
-	u.Capacity - u.UsedCapacity as RemainingCapacity
-from [User] u
-where u.Id = 1
-order by RemainingCapacity DESC;
- 
---get list file by size
-SELECT
-	f.Name ,
-	f.Size
+-- SELECT FOLDER HAVE BEEN DELETED
+SELECT 
+	t.TrashId,
+	ot.Name AS ObjectType,
+	fo.Name AS FolderName,
+	t.RemovedDatetime,
+	t.IsPermanent
+FROM Trash t
+JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
+JOIN Folder fo ON t.ObjectTypeId = 1 AND t.ObjectId = fo.FolderId
+WHERE t.UserId = 500;
+
+-- STARED SCREEN
+-- SELECT FILE
+SELECT 
+	f.Name AS FileName,
+	u1.Name AS FileOwnerName,
+	u1.UserId AS UserId,
+	ft.Name AS FileTypeName
+FROM FavoriteObject fa
+LEFT JOIN [File] f ON fa.ObjectTypeId = 2 AND fa.ObjectId = f.FileId
+JOIN [User] u1 ON f.OwnerId = u1.UserId
+JOIN FileType ft ON f.FileTypeId = ft.FileTypeId
+WHERE fa.OwnerId = 100
+
+SELECT * FROM FavoriteObject WHERE OwnerId = 100
+SELECT * FROM [File] f WHERE f.FileId = 151
+
+-- PRODUCT SCREEN
+-- SELECT ALL OF PRODUCT
+SELECT * FROM [Product]
+
+-- SELECT PRODUCT BOUGHT BY USER
+SELECT 
+	pro.Name AS ProductName,
+	u.Name AS UserName,
+	CASE
+		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
+		ELSE pro.Cost - po.Discount
+	END AS TotalCost
+FROM UserProduct up
+JOIN [User] u ON up.UserId = u.UserId
+JOIN Promotion po ON up.PromotionId = po.PromotionId
+JOIN [Product] pro ON up.ProductId = pro.ProductId
+WHERE up.UserId = 100
+
+SELECT * FROM Promotion
+SELECT * FROM [Product]
+SELECT * FROM UserProduct up WHERE up.UserId = 100
+
+-- SELECT TOP 10 PAYERS
+SELECT TOP 10
+	pro.Name AS ProductName,
+	u.Name AS UserName,
+	CASE
+		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
+		ELSE pro.Cost - po.Discount
+	END AS TotalCost
+FROM UserProduct up
+JOIN [User] u ON up.UserId = u.UserId
+JOIN [Product] pro ON up.ProductId = pro.ProductId
+JOIN Promotion po ON up.PromotionId = po.PromotionId
+ORDER BY TotalCost DESC
+
+-- SELECT FILE/FOLDER SHARED FOR USER WITH USERID = 500
+SELECT 
+	u.Name AS UserName,
+	p.Name AS Permission,
+	f.Name AS FileName,
+	fo.Name AS FolderName
+FROM SharedUser su
+JOIN [User] u ON su.SharedUserId = u.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN Permission p ON su.PermissionId = p.PermissionId
+LEFT JOIN Folder fo ON s.ObjectTypeId = 1 AND fo.FolderId = s.ObjectId
+LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND f.FileId = s.ObjectId
+WHERE su.SharedUserId = 500
+
+SELECT * FROM SharedUser su WHERE su.SharedUserId = 500
+SELECT * FROM Share s WHERE s.ShareId = 547
+SELECT * FROM [File] f WHERE f.FileId = 298
+
+-- SELECT TOP 5 LARGEST FILE
+SELECT TOP 5
+	f.Name AS FileName,
+	u.Name AS Owner,
+	f.Size AS FileSize
 FROM [File] f
-join [User] u on f.OwnerId = u.UserId
-ORDER BY f.Size DESC;
+JOIN [User] u ON f.OwnerId = u.UserId
+ORDER BY f.Size DESC
+
+-- SELECT BANNED USER
+SELECT 
+	BU.Id AS BanId,
+	Banned.Name AS BannedUserName,
+	Banner.Name AS BannedByUserName,
+	BU.BannedAt
+FROM BannedUser BU
+JOIN [User] Banned ON BU.UserId = Banned.UserId
+JOIN [User] Banner ON BU.BannedUserId = Banner.UserId
+ORDER BY BU.BannedAt DESC;
+
+-- SELECT PRODUCT BOUGHT BY USER
+SELECT 
+	p.Name AS ProductName,
+	u.Name AS UserName,
+	up.PayingDatetime,
+	up.EndDatetime,
+	pr.Name AS PromotionName
+FROM UserProduct up
+JOIN [Product] p ON up.ProductId = p.ProductId
+JOIN [User] u ON up.UserId = u.UserId
+JOIN Promotion pr ON up.PromotionId = pr.PromotionId
+WHERE u.UserId = 100
+
+-- SELECT FILE/FOLDER SHARE BY USER
+SELECT 
+	u.Name AS UserName,
+	f.Name AS FileName,
+	fo.Name AS FolderName
+FROM Share s
+JOIN [User] u ON s.Sharer = u.UserId
+JOIN ObjectType ot ON s.ObjectTypeId = ot.ObjectTypeId
+LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
+LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE s.Sharer = 100
+
+SELECT COUNT(*)
+FROM Share
+GROUP BY Share.Sharer
+
+SELECT *
+FROM Share
+WHERE ObjectId = 654
+
+-- SELECT USER WAS SHARED OBJECT WITH OBJECTID = 654
+SELECT 
+	u.Name AS UserName,
+	f.Name AS FileName,
+	fo.Name AS FolderName,
+	p.Name AS PermissionName
+FROM Share s
+JOIN SharedUser su ON s.ShareId = su.ShareId
+JOIN [User] u ON su.UserId = u.UserId
+JOIN Permission p ON su.PermissionId = p.PermissionId
+LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
+LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE s.ObjectId = 654
+
+SELECT *
+FROM [File] fm
+WHERE f.FileId = 654
+
+SELECT *
+FROM [Folder] f
+WHERE f.FolderId = 654
+
+-- USER MANAGEMENT: RETRIEVE THE NAMES AND EMAIL ADDRESSES OF ALL USERS WHO HAVE USED MORE THAN 5% OF THEIR STORAGE CAPACITY
+SELECT 
+	u.Name AS UserName,
+	u.Email AS UserEmail
+FROM [User] u
+WHERE ((CAST(u.UsedCapacity AS FLOAT) / u.Capacity) * 100) > 5
+
+SELECT * FROM [User]
+
+-- FOLDER STRUCTURE: LIST ALL FOLDERS OWNED BY A SPECIFIC USER (E.G., USERID = 1), INCLUDING THEIR FULL PATH AND THE NAME OF THE COLOR ASSOCIATED WITH EACH FOLDER
+SELECT 
+	fo.Path,
+	c.ColorName,
+	u.Name AS UserName
+FROM [Folder] fo
+JOIN [User] u ON fo.OwnerId = u.UserId
+JOIN Color c ON fo.ColorId = c.ColorId
+WHERE fo.OwnerId = 20
+
+-- 
+SELECT
+ft.Name , f.Name , u.UserId , fo.Name 
+FROM [FavoriteObject] fa
+JOIN [User] u ON fa.OwnerId =u.UserId
+LEFT JOIN [File] f ON fa.ObjectTypeId =2 AND fa.ObjectId = f.FileId  
+LEFT JOIN [Folder] fo ON fa.ObjectTypeId = 1 AND fa.ObjectId = fo.FolderId
+JOIN FileType ft ON ft.FileTypeId = f.FileTypeId
+WHERE fa.OwnerId = 252
