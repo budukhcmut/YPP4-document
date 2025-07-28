@@ -187,7 +187,7 @@ SELECT TOP 5
 	f.Name AS FileName,
 	u.Name AS Owner,
 	f.Size AS FileSize
-FROM [File] f
+FROM [File] f 
 JOIN [User] u ON f.OwnerId = u.UserId
 ORDER BY f.Size DESC
 
@@ -285,3 +285,9 @@ LEFT JOIN [File] f ON fa.ObjectTypeId =2 AND fa.ObjectId = f.FileId
 LEFT JOIN [Folder] fo ON fa.ObjectTypeId = 1 AND fa.ObjectId = fo.FolderId
 JOIN FileType ft ON ft.FileTypeId = f.FileTypeId
 WHERE fa.OwnerId = 252
+
+-- 
+SELECT s.Term , fo.Name ,s.DocumentLength ,s.TermFrequency
+FROM SearchIndex  s
+JOIN [Folder] fo ON s.ObjectId = fo.FolderId AND s.ObjectTypeId = 1
+WHERE s.Term = 'file' 
