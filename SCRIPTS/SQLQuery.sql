@@ -1,4 +1,4 @@
-USE GoogleDrive
+﻿USE GoogleDrive
 GO
 
 
@@ -276,7 +276,7 @@ JOIN [User] u ON fo.OwnerId = u.UserId
 JOIN Color c ON fo.ColorId = c.ColorId
 WHERE fo.OwnerId = 20
 
--- 
+-- Example 
 SELECT
 ft.Name , f.Name , u.UserId , fo.Name 
 FROM [FavoriteObject] fa
@@ -286,8 +286,51 @@ LEFT JOIN [Folder] fo ON fa.ObjectTypeId = 1 AND fa.ObjectId = fo.FolderId
 JOIN FileType ft ON ft.FileTypeId = f.FileTypeId
 WHERE fa.OwnerId = 252
 
--- 
+-- Find folder constraint keyword "file"
 SELECT s.Term , fo.Name ,s.DocumentLength ,s.TermFrequency
 FROM SearchIndex  s
 JOIN [Folder] fo ON s.ObjectId = fo.FolderId AND s.ObjectTypeId = 1
 WHERE s.Term = 'file' 
+
+-- Find 3 files have highest score about TF-IDF for keyword "security"
+SELECT TOP 3
+s.ObjectId ,f.Name ,s.ObjectTypeId , s.TermFrequency*t.IDF AS TFIDFScored
+
+FROM SearchIndex s 
+JOIN TermIDF t ON s.Term = t.Term 
+JOIN [File] f ON s.ObjectId = f.FileId
+WHERE s.Term = 'security' AND s.ObjectTypeId = 2
+ORDER BY TFIDFScored DESC 
+
+-- With each file , find keyword have highest TFIDF Score 
+WITH TFIDF_Ranked AS (
+    SELECT 
+        s.ObjectId AS FileId,
+        f.Name AS FileName,
+        s.Term,
+        s.TermFrequency,
+        t.IDF,
+        (s.TermFrequency * t.IDF) AS TF_IDF_Score,
+        ROW_NUMBER() OVER (PARTITION BY s.ObjectId ORDER BY (s.TermFrequency * t.IDF) DESC) AS rn
+    FROM SearchIndex s
+    JOIN TermIDF t ON s.Term = t.Term
+    JOIN [File] f ON s.ObjectId = f.FileId
+    WHERE s.ObjectTypeId = 1
+)
+SELECT *
+FROM TFIDF_Ranked
+WHERE rn = 1;
+
+-- find all file have more than 3 keyword and each keyword have tf-idf score > 2
+
+SELECT 
+s.ObjectId AS FileId, COUNT(s.ObjectId) AS High_TFIDF_TermCount
+FROM SearchIndex s 
+JOIN TermIDF t ON s.Term = t.Term 
+WHERE (t.IDF*s.TermFrequency) > 2 AND s.ObjectTypeId =2   
+GROUP BY s.ObjectId
+HAVING COUNT(s.ObjectId) > 0 
+
+--
+SELECT * FROM SearchIndex 
+SELECT * FROM TermIDF
