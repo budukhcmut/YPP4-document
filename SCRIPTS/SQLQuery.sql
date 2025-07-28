@@ -321,7 +321,7 @@ SELECT *
 FROM TFIDF_Ranked
 WHERE rn = 1;
 
--- find all file have more than 3 keyword and each keyword have tf-idf score > 2
+-- Find all file have more than 3 keyword and each keyword have tf-idf score > 2
 
 SELECT 
 s.ObjectId AS FileId, COUNT(s.ObjectId) AS High_TFIDF_TermCount
@@ -334,3 +334,10 @@ HAVING COUNT(s.ObjectId) > 0
 --
 SELECT * FROM SearchIndex 
 SELECT * FROM TermIDF
+
+-- 
+
+FROM SearchIndex s 
+JOIN TermIDF t ON s.Term = t.Term
+WHERE s.ObjectTypeId = 2
+GROUP BY s.ObjectId
