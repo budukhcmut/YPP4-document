@@ -56,8 +56,6 @@ JOIN Share s ON su.ShareId = s.ShareId
 JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
 WHERE su.UserId = 100
 
-SELECT * FROM Share WHERE ObjectTypeId = 1
-SELECT * FROM SharedUser WHERE ShareId = 2
 
 -- RECOMMENT FILE/FOLDER
 SELECT TOP 10
@@ -71,7 +69,6 @@ JOIN [File] f ON r.ObjectTypeId = 2 AND r.ObjectId = f.FileId
 WHERE r.UserId = 319
 ORDER BY r.DateTime DESC
 
-SELECT * FROM Recent
 
 -- RECOMMENT FOLDER
 SELECT TOP 10
@@ -85,7 +82,7 @@ JOIN [Folder] fo ON r.ObjectTypeId = 1 AND r.ObjectId = fo.FolderId
 WHERE r.UserId = 2
 ORDER BY r.DateTime DESC
 
-SELECT * FROM Recent
+
 
 -- TRASH SCREEN
 -- SELECT FILE HAVE BEEN DELETED
@@ -125,8 +122,6 @@ JOIN [User] u1 ON f.OwnerId = u1.UserId
 JOIN FileType ft ON f.FileTypeId = ft.FileTypeId
 WHERE fa.OwnerId = 100
 
-SELECT * FROM FavoriteObject WHERE OwnerId = 100
-SELECT * FROM [File] f WHERE f.FileId = 151
 
 -- PRODUCT SCREEN
 -- SELECT ALL OF PRODUCT
@@ -146,9 +141,7 @@ JOIN Promotion po ON up.PromotionId = po.PromotionId
 JOIN [Product] pro ON up.ProductId = pro.ProductId
 WHERE up.UserId = 100
 
-SELECT * FROM Promotion
-SELECT * FROM [Product]
-SELECT * FROM UserProduct up WHERE up.UserId = 100
+
 
 -- SELECT TOP 10 PAYERS
 SELECT TOP 10
@@ -178,9 +171,7 @@ LEFT JOIN Folder fo ON s.ObjectTypeId = 1 AND fo.FolderId = s.ObjectId
 LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND f.FileId = s.ObjectId
 WHERE su.SharedUserId = 500
 
-SELECT * FROM SharedUser su WHERE su.SharedUserId = 500
-SELECT * FROM Share s WHERE s.ShareId = 547
-SELECT * FROM [File] f WHERE f.FileId = 298
+
 
 -- SELECT TOP 5 LARGEST FILE
 SELECT TOP 5
@@ -227,13 +218,7 @@ LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
 LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
 WHERE s.Sharer = 100
 
-SELECT COUNT(*)
-FROM Share
-GROUP BY Share.Sharer
 
-SELECT *
-FROM Share
-WHERE ObjectId = 654
 
 -- SELECT USER WAS SHARED OBJECT WITH OBJECTID = 654
 SELECT 
@@ -249,13 +234,6 @@ LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
 LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
 WHERE s.ObjectId = 654
 
-SELECT *
-FROM [File] fm
-WHERE f.FileId = 654
-
-SELECT *
-FROM [Folder] f
-WHERE f.FolderId = 654
 
 -- USER MANAGEMENT: RETRIEVE THE NAMES AND EMAIL ADDRESSES OF ALL USERS WHO HAVE USED MORE THAN 5% OF THEIR STORAGE CAPACITY
 SELECT 
@@ -264,7 +242,7 @@ SELECT
 FROM [User] u
 WHERE ((CAST(u.UsedCapacity AS FLOAT) / u.Capacity) * 100) > 5
 
-SELECT * FROM [User]
+
 
 -- FOLDER STRUCTURE: LIST ALL FOLDERS OWNED BY A SPECIFIC USER (E.G., USERID = 1), INCLUDING THEIR FULL PATH AND THE NAME OF THE COLOR ASSOCIATED WITH EACH FOLDER
 SELECT 
@@ -335,7 +313,7 @@ HAVING COUNT(s.ObjectId) > 0
 SELECT * FROM SearchIndex 
 SELECT * FROM TermIDF
 
--- 
+-- Example
 
 FROM SearchIndex s 
 JOIN TermIDF t ON s.Term = t.Term
