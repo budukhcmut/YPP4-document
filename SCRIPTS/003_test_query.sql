@@ -1,321 +1,434 @@
-﻿USE GoogleDrive
+﻿	a.Email as Email
+USE GoogleDrive
 GO
 
-
--- HOME SCREEN
--- SELECT USER INFORMATION
+-- Home screen
+-- 1.SELECT User information
+DECLARE @userId INT = 1
 SELECT 
-	u.Name  UserName,
-	u.Email  Email
-FROM [User] u
-WHERE u.UserId =1 
+	a.UserName AS UserName,
+	a.Email AS Email
+FROM Account a
+WHERE a.UserId = @userId 
 
--- SELECT USER SETTING
+-- 2.SELECT User Setting
+DECLARE @userId INT = 1;
 SELECT 
-	u.Name  UserName,
+	su.SettingUserId,
+	a.UserName AS UserName,
 	s.SettingKey,
 	s.SettingValue
 FROM SettingUser su
-JOIN [User] u ON su.UserId = u.UserId
-JOIN Setting s ON su.SettingId = s.SettingId
-WHERE u.UserId =1
+JOIN Account a ON su.UserId = a.UserId
+JOIN AppSetting s ON su.SettingId = s.SettingId
+WHERE a.UserId = @userId
 
--- SELECT LOGIN USER FILE
-SELECT 
-	u.Name  UserName,
-	f.Name  FileName
-FROM [File] f 
-JOIN [User] u ON f.OwnerId = u.UserId
-WHERE u.UserId =1
-
--- SELECT LOGIN USER FOLDER
-SELECT 
-	u.Name  UserName,
-	fo.Name  FolderName
-FROM [Folder] fo
-JOIN [User] u ON fo.OwnerId = u.UserId
-WHERE u.UserId =1
-
--- SELECT SHARED FILE WITH LOGIN USER
-SELECT 
-	u.Name  UserName,
-	f.Name  FileName
-FROM SharedUser su
-JOIN [User] u ON su.UserId = u.UserId
-JOIN Share s ON su.ShareId = s.ShareId
-JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
-WHERE su.UserId = 252
-
--- SELECT SHARED FOLDER WITH LOGIN USER
-SELECT 
-	u.Name  UserName,
-	fo.Name  FolderName
-FROM SharedUser su
-JOIN [User] u ON su.UserId = u.UserId
-JOIN Share s ON su.ShareId = s.ShareId
-JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
-WHERE su.UserId = 100
-
-
--- RECOMMENT FILE/FOLDER
+-- 3.RECOMMENT file
+DECLARE @userId INT = 2
 SELECT TOP 10
-	u.Name AS UserName,
-	f.Name AS FileName,
-	r.Log AS Log,
-	r.DateTime AS DateTime
-FROM Recent r
-JOIN [User] u ON r.UserId = u.UserId
-JOIN [File] f ON r.ObjectTypeId = 2 AND r.ObjectId = f.FileId
-WHERE r.UserId = 319
-ORDER BY r.DateTime DESC
+	f.FileId,
+	a.UserName,
+	f.UserFileName,
+	ar.ActionLog,
+	ar.ActionDateTime
+FROM ActionRecent ar 
+JOIN Account a ON ar.UserId = a.UserId
+JOIN UserFile f ON ar.ObjectTypeId = 2 AND ar.ObjectId = f.FileId
+WHERE ar.UserId = @userId
+ORDER BY ar.ActionDateTime DESC
 
+SELECT * FROM ActionRecent
 
--- RECOMMENT FOLDER
+-- 4.RECOMMENT folder
+DECLARE @userId INT = 3
 SELECT TOP 10
-	u.Name AS UserName,
-	fo.Name AS FolderName,
-	r.Log AS Log,
-	r.DateTime AS DateTime
-FROM Recent r
-JOIN [User] u ON r.UserId = u.UserId
-JOIN [Folder] fo ON r.ObjectTypeId = 1 AND r.ObjectId = fo.FolderId
-WHERE r.UserId = 2
-ORDER BY r.DateTime DESC
+	fo.FolderId,
+	a.UserName,
+	fo.FolderName,
+	ar.ActionLog,
+	ar.ActionDateTime
+FROM ActionRecent ar
+JOIN Account a ON ar.UserId = a.UserId
+JOIN Folder fo ON ar.ObjectTypeId = 1 AND ar.ObjectId = fo.FolderId
+WHERE ar.UserId = @userId  
+ORDER BY ar.ActionDateTime DESC
 
 
-
--- TRASH SCREEN
--- SELECT FILE HAVE BEEN DELETED
+-- My Drive Screen
+-- 1.SELECT login user file
+DECLARE @LoginUser INT = 1 
 SELECT 
+	uf.FileId,
+	a.UserName,
+	uf.UserFileName
+FROM UserFile uf 
+JOIN Account a ON uf.OwnerId = a.UserId
+WHERE a.UserId = @LoginUser
+
+-- 2.SELECT login user folder
+DECLARE @userId INT = 1
+SELECT 
+	fo.FolderId,
+	a.UserName,
+	fo.FolderName
+FROM Folder fo
+JOIN Account a ON fo.OwnerId = a.UserId
+WHERE a.UserId = @userId
+
+-- Share with me Screen
+-- 1.SELECT shared file with login user
+DECLARE @userId INT = 102
+SELECT
+	f.FileId,
+	a.UserName,
+	f.UserFileName
+FROM SharedUser su
+JOIN Account a ON su.UserId = a.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN UserFile f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
+WHERE su.UserId = @userId
+
+
+
+-- 2.SELECT shared folder with login user
+DECLARE @userId INT = 101
+SELECT
+	fo.FolderId,
+	a.UserName,
+	fo.FolderName
+FROM SharedUser su
+JOIN Account a ON su.UserId = a.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN Folder fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE su.UserId = @userId
+
+
+-- Trash screen
+-- 1.SELECT file have been deleted
+DECLARE @userId INT = 704
+SELECT
+	f.FileId,
 	t.TrashId,
-	ot.Name AS ObjectType,
-	f.Name AS FileName,
+	ot.ObjectTypeName,
+	f.UserFileName,
 	t.RemovedDatetime,
 	t.IsPermanent
 FROM Trash t
 JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
-JOIN [File] f ON t.ObjectTypeId = 2 AND t.ObjectId = f.FileId
-WHERE t.UserId = 500;
+JOIN UserFile f ON t.ObjectTypeId = 2 AND t.ObjectId = f.FileId
+WHERE t.UserId = @userId;
 
--- SELECT FOLDER HAVE BEEN DELETED
+
+-- 2.SELECT folder have been deleted
+DECLARE @userId INT = 1
 SELECT 
+	fo.FolderId,
 	t.TrashId,
-	ot.Name AS ObjectType,
-	fo.Name AS FolderName,
+	ot.ObjectTypeName,
+	fo.FolderName,
 	t.RemovedDatetime,
 	t.IsPermanent
 FROM Trash t
 JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
 JOIN Folder fo ON t.ObjectTypeId = 1 AND t.ObjectId = fo.FolderId
-WHERE t.UserId = 500;
+WHERE t.UserId = @userId;
 
--- STARED SCREEN
--- SELECT FILE
+-- Starred screen
+-- 1.SELECT file
+DECLARE @userId INT = 794
 SELECT 
-	f.Name AS FileName,
-	u1.Name AS FileOwnerName,
-	u1.UserId AS UserId,
-	ft.Name AS FileTypeName
+	f.FileId,
+	f.UserFileName,
+	a.UserName AS FileOwnerName,
+	a.UserId AS UserId,
+	ft.FileTypeName
 FROM FavoriteObject fa
-LEFT JOIN [File] f ON fa.ObjectTypeId = 2 AND fa.ObjectId = f.FileId
-JOIN [User] u1 ON f.OwnerId = u1.UserId
+LEFT JOIN UserFile f ON fa.ObjectTypeId = 2 AND fa.ObjectId = f.FileId
+LEFT JOIN Account a ON f.OwnerId = a.UserId 
 JOIN FileType ft ON f.FileTypeId = ft.FileTypeId
-WHERE fa.OwnerId = 100
+WHERE fa.OwnerId = @userId
 
 
--- PRODUCT SCREEN
--- SELECT ALL OF PRODUCT
-SELECT * FROM [Product]
 
--- SELECT PRODUCT BOUGHT BY USER
+-- Product Screen
+-- SELECT all of product
+SELECT
+	ProductId,
+	ProductName,
+	Cost,
+	Duration
+FROM ProductItem
+
+-- SELECT Product bought by user
+DECLARE @userId INT = 100
 SELECT 
-	pro.Name AS ProductName,
-	u.Name AS UserName,
+	pro.ProductId,
+	pro.ProductName,
+	a.UserId,
+	a.UserName,
 	CASE
-		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
+		WHEN po.IsPercent = 1 THEN pro.Cost - (pro.Cost * (po.Discount / 100))
 		ELSE pro.Cost - po.Discount
 	END AS TotalCost
 FROM UserProduct up
-JOIN [User] u ON up.UserId = u.UserId
+JOIN Account a ON up.UserId = a.UserId
 JOIN Promotion po ON up.PromotionId = po.PromotionId
-JOIN [Product] pro ON up.ProductId = pro.ProductId
-WHERE up.UserId = 100
+JOIN ProductItem pro ON up.ProductId = pro.ProductId
+WHERE up.UserId = @userId
 
 
 
--- SELECT TOP 10 PAYERS
+-- SELECT Top 10 Payers 
 SELECT TOP 10
-	pro.Name AS ProductName,
-	u.Name AS UserName,
+	a.UserId,
+	pro.ProductName,
+	a.UserName,
 	CASE
 		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
 		ELSE pro.Cost - po.Discount
 	END AS TotalCost
 FROM UserProduct up
-JOIN [User] u ON up.UserId = u.UserId
-JOIN [Product] pro ON up.ProductId = pro.ProductId
+JOIN Account a ON up.UserId = a.UserId
+JOIN ProductItem pro ON up.ProductId = pro.ProductId
 JOIN Promotion po ON up.PromotionId = po.PromotionId
 ORDER BY TotalCost DESC
 
--- SELECT FILE/FOLDER SHARED FOR USER WITH USERID = 500
+-- SELECT folder shared for user with userid = 101
+DECLARE @userId INT = 101
 SELECT 
-	u.Name AS UserName,
-	p.Name AS Permission,
-	f.Name AS FileName,
-	fo.Name AS FolderName
+	a.UserName,
+	fo.FolderId,
+	p.PermissionName,
+	fo.FolderName
 FROM SharedUser su
-JOIN [User] u ON su.SharedUserId = u.UserId
+JOIN Account a ON su.SharedUserId = a.UserId
 JOIN Share s ON su.ShareId = s.ShareId
 JOIN Permission p ON su.PermissionId = p.PermissionId
 LEFT JOIN Folder fo ON s.ObjectTypeId = 1 AND fo.FolderId = s.ObjectId
-LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND f.FileId = s.ObjectId
-WHERE su.SharedUserId = 500
+WHERE su.UserId = @userId
+
+-- SELECT file shared for user with userid = 102
+DECLARE @userId INT = 102
+SELECT 
+	a.UserName,
+	p.PermissionName,
+	f.FileId,
+	f.UserFileName
+FROM SharedUser su
+JOIN Account a ON su.SharedUserId = a.UserId
+JOIN Share s ON su.ShareId = s.ShareId
+JOIN Permission p ON su.PermissionId = p.PermissionId
+LEFT JOIN UserFile f ON s.ObjectTypeId = 2 AND f.FileId = s.ObjectId
+WHERE su.UserId = @userId
 
 
-
--- SELECT TOP 5 LARGEST FILE
-SELECT TOP 5
-	f.Name AS FileName,
-	u.Name AS Owner,
+-- SELECT top 5 largest file of login-user 
+DECLARE @userId INT = 4
+SELECT DISTINCT TOP 5
+	f.UserFileName,
+	a.UserName AS OwnerName,
 	f.Size AS FileSize
-FROM [File] f 
-JOIN [User] u ON f.OwnerId = u.UserId
+FROM UserFile f
+JOIN Account a ON f.OwnerId = a.UserId
+WHERE f.OwnerId = @userId
 ORDER BY f.Size DESC
 
--- SELECT BANNED USER
+
+
+-- SELECT banned user of login-user
+DECLARE @userId INT = 533
 SELECT 
 	BU.Id AS BanId,
-	Banned.Name AS BannedUserName,
-	Banner.Name AS BannedByUserName,
+	Banned.UserName AS BannedUserName,
+	Banner.UserName AS BannedByUserName,
 	BU.BannedAt
 FROM BannedUser BU
-JOIN [User] Banned ON BU.UserId = Banned.UserId
-JOIN [User] Banner ON BU.BannedUserId = Banner.UserId
+JOIN Account Banned ON BU.UserId = Banned.UserId
+JOIN Account Banner ON BU.BannedUserId = Banner.UserId
+WHERE BU.UserId = @userId
 ORDER BY BU.BannedAt DESC;
 
--- SELECT PRODUCT BOUGHT BY USER
+-- SELECT product bought by user 
+DECLARE @userId INT = 100
 SELECT 
-	p.Name AS ProductName,
-	u.Name AS UserName,
+	p.ProductId,
+	p.ProductName,
+	a.UserName,
 	up.PayingDatetime,
 	up.EndDatetime,
-	pr.Name AS PromotionName
+	pr.PromotionName
 FROM UserProduct up
-JOIN [Product] p ON up.ProductId = p.ProductId
-JOIN [User] u ON up.UserId = u.UserId
+JOIN ProductItem p ON up.ProductId = p.ProductId
+JOIN Account a ON up.UserId = a.UserId
 JOIN Promotion pr ON up.PromotionId = pr.PromotionId
-WHERE u.UserId = 100
+WHERE a.UserId = @userId
 
--- SELECT FILE/FOLDER SHARE BY USER
+-- SELECT file share by user
+DECLARE @userId INT = 100
 SELECT 
-	u.Name AS UserName,
-	f.Name AS FileName,
-	fo.Name AS FolderName
+	a.UserName,
+	f.UserFileName
 FROM Share s
-JOIN [User] u ON s.Sharer = u.UserId
+JOIN Account a ON s.Sharer = a.UserId
 JOIN ObjectType ot ON s.ObjectTypeId = ot.ObjectTypeId
-LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
-LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
-WHERE s.Sharer = 100
+LEFT JOIN UserFile f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
+WHERE s.Sharer = @userId
 
-
-
--- SELECT USER WAS SHARED OBJECT WITH OBJECTID = 654
+-- SELECT folder share by user
+DECLARE @userId INT = 1
 SELECT 
-	u.Name AS UserName,
-	f.Name AS FileName,
-	fo.Name AS FolderName,
-	p.Name AS PermissionName
+	a.UserName,
+	fo.FolderName
+FROM Share s
+JOIN Account a ON s.Sharer = a.UserId
+JOIN ObjectType ot ON s.ObjectTypeId = ot.ObjectTypeId
+LEFT JOIN Folder fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE s.Sharer = @userId
+
+
+
+
+-- SELECT user was shared object with objectId = 5 and objectType is folder
+DECLARE @objectId INT = 5
+SELECT 
+	a.UserName,
+	fo.FolderName,
+	p.PermissionName
 FROM Share s
 JOIN SharedUser su ON s.ShareId = su.ShareId
-JOIN [User] u ON su.UserId = u.UserId
+JOIN Account a ON su.UserId = a.UserId
 JOIN Permission p ON su.PermissionId = p.PermissionId
-LEFT JOIN [File] f ON s.ObjectTypeId = 2 AND s.ObjectId = f.FileId
-LEFT JOIN [Folder] fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
-WHERE s.ObjectId = 654
+LEFT JOIN Folder fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
+WHERE s.ObjectId = @objectId
 
 
--- USER MANAGEMENT: RETRIEVE THE NAMES AND EMAIL ADDRESSES OF ALL USERS WHO HAVE USED MORE THAN 5% OF THEIR STORAGE CAPACITY
+
+-- User Management: Retrieve the names and email addresses of all users who have used more than 50% of their storage capacity.
+SELECT TOP 5
+	a.UserName,
+	a.Email AS UserEmail,
+	(a.Capacity - a.UsedCapacity) AS AllowCapicity
+FROM Account a
+WHERE ((CAST(a.UsedCapacity AS FLOAT) / a.Capacity) * 100) > 50
+
+
+
+-- Folder Structure
+DECLARE @userId INT = 20
 SELECT 
-	u.Name AS UserName,
-	u.Email AS UserEmail
-FROM [User] u
-WHERE ((CAST(u.UsedCapacity AS FLOAT) / u.Capacity) * 100) > 5
-
-
-
--- FOLDER STRUCTURE: LIST ALL FOLDERS OWNED BY A SPECIFIC USER (E.G., USERID = 1), INCLUDING THEIR FULL PATH AND THE NAME OF THE COLOR ASSOCIATED WITH EACH FOLDER
-SELECT 
-	fo.Path,
+	fo.FolderPath,
 	c.ColorName,
-	u.Name AS UserName
-FROM [Folder] fo
-JOIN [User] u ON fo.OwnerId = u.UserId
+	a.UserName
+FROM Folder fo
+JOIN Account a ON fo.OwnerId = a.UserId
 JOIN Color c ON fo.ColorId = c.ColorId
-WHERE fo.OwnerId = 20
+WHERE fo.OwnerId = @userId
 
--- Example 
-SELECT
-ft.Name , f.Name , u.UserId , fo.Name 
-FROM [FavoriteObject] fa
-JOIN [User] u ON fa.OwnerId =u.UserId
-LEFT JOIN [File] f ON fa.ObjectTypeId =2 AND fa.ObjectId = f.FileId  
-LEFT JOIN [Folder] fo ON fa.ObjectTypeId = 1 AND fa.ObjectId = fo.FolderId
-JOIN FileType ft ON ft.FileTypeId = f.FileTypeId
-WHERE fa.OwnerId = 252
-
--- Find folder constraint keyword "file"
-SELECT s.Term , fo.Name ,s.DocumentLength ,s.TermFrequency
-FROM SearchIndex  s
-JOIN [Folder] fo ON s.ObjectId = fo.FolderId AND s.ObjectTypeId = 1
-WHERE s.Term = 'file' 
-
--- Find 3 files have highest score about TF-IDF for keyword "security"
-SELECT TOP 3
-s.ObjectId ,f.Name ,s.ObjectTypeId , s.TermFrequency*t.IDF AS TFIDFScored
-
-FROM SearchIndex s 
-JOIN TermIDF t ON s.Term = t.Term 
-JOIN [File] f ON s.ObjectId = f.FileId
-WHERE s.Term = 'security' AND s.ObjectTypeId = 2
-ORDER BY TFIDFScored DESC 
-
--- With each file , find keyword have highest TFIDF Score 
-WITH TFIDF_Ranked AS (
-    SELECT 
-        s.ObjectId AS FileId,
-        f.Name AS FileName,
-        s.Term,
-        s.TermFrequency,
-        t.IDF,
-        (s.TermFrequency * t.IDF) AS TF_IDF_Score,
-        ROW_NUMBER() OVER (PARTITION BY s.ObjectId ORDER BY (s.TermFrequency * t.IDF) DESC) AS rn
-    FROM SearchIndex s
-    JOIN TermIDF t ON s.Term = t.Term
-    JOIN [File] f ON s.ObjectId = f.FileId
-    WHERE s.ObjectTypeId = 1
+-- SELECT children of folder
+DECLARE @FolderId INT = 1;
+WITH RecursiveFolders AS (
+	SELECT FolderId, FolderName, ParentId, FolderPath
+	FROM Folder
+	WHERE FolderId = @FolderId
+	UNION ALL
+	SELECT f.FolderId, f.FolderName, f.ParentId, f.FolderPath
+	FROM Folder f
+	INNER JOIN RecursiveFolders rf ON f.ParentId = rf.FolderId
+	WHERE f.FolderPath LIKE rf.FolderPath + '/%'
 )
-SELECT *
-FROM TFIDF_Ranked
-WHERE rn = 1;
-
--- Find all file have more than 3 keyword and each keyword have tf-idf score > 2
-
 SELECT 
-s.ObjectId AS FileId, COUNT(s.ObjectId) AS High_TFIDF_TermCount
-FROM SearchIndex s 
-JOIN TermIDF t ON s.Term = t.Term 
-WHERE (t.IDF*s.TermFrequency) > 2 AND s.ObjectTypeId =2   
-GROUP BY s.ObjectId
-HAVING COUNT(s.ObjectId) > 0 
+	rf.FolderName,
+	rf.ParentId,
+	rf.FolderPath,
+	fo.FolderName AS ParentFolderName
+FROM RecursiveFolders rf
+LEFT JOIN Folder fo ON rf.ParentId = fo.FolderId
+WHERE rf.FolderId != 1
+ORDER BY rf.FolderPath;
 
---
-SELECT * FROM SearchIndex 
-SELECT * FROM TermIDF
+-- Full-text search query
+SELECT 
+	uf.FileId,
+	uf.UserFileName,
+	s.Term,
+	s.TermFrequency,
+	s.TermPositions
+FROM SearchIndex s
+JOIN FileContent fc ON s.FileContentId = fc.ContentId
+JOIN UserFile uf ON fc.FileId = uf.FileId
+WHERE s.Term IN ('project', 'proposal', 'employ')
+ORDER BY s.Bm25Score
 
--- Example
+-- Sort UserFile By ShareUser
+DECLARE @Sharer INT = 2
+DECLARE @shared INT = 102
+SELECT 
+	uf.FileId,
+	ft.Icon,
+	uf.UserFileName AS NameOfFile,
+	a1.UserName AS SharerName,
+	s.CreatedAt AS ShareDateTime,
+	a.UserName AS sharedName
+FROM SharedUser su
+JOIN Share s ON su.ShareId = s.ShareId
+LEFT JOIN UserFile uf ON s.ObjectTypeId = 2 AND s.ObjectId = uf.FileId
+JOIN FileType ft ON uf.FileTypeId = ft.FileTypeId
+JOIN Account a ON su.UserId = a.UserId
+JOIN Account a1 ON s.Sharer = a1.UserId
+WHERE su.UserId = @shared AND s.Sharer = @Sharer
 
-FROM SearchIndex s 
-JOIN TermIDF t ON s.Term = t.Term
-WHERE s.ObjectTypeId = 2
-GROUP BY s.ObjectId
+SELECT * FROM SharedUser
+
+-- Sort UserFile by FileType
+DECLARE @OwnerId INT = 1
+DECLARE @FileType INT = 3
+SELECT 
+	uf.FileId,
+	ft.Icon,
+	uf.UserFileName,
+	a.UserName AS OwnerName,
+	uf.CreatedAt
+FROM UserFile uf
+JOIN FileType ft ON uf.FileTypeId = ft.FileTypeId
+JOIN Account a ON uf.OwnerId = a.UserId
+WHERE uf.FileTypeId = @FileType AND uf.OwnerId = @OwnerId
+
+-- Sort by Action recent
+WITH RecentObjects AS (
+	SELECT 
+		ar.ObjectId,
+		ar.ObjectTypeId,
+		ar.ActionDateTime,
+		ar.ActionLog,
+		CASE 
+			WHEN ar.ObjectTypeId = 1 THEN 'Folder'
+			WHEN ar.ObjectTypeId = 2 THEN 'File'
+			ELSE 'Unknown'
+		END AS ObjectType,
+		uf.OwnerId AS FileOwnerId,
+		f.OwnerId AS FolderOwnerId
+	FROM ActionRecent ar
+	LEFT JOIN UserFile uf ON ar.ObjectId = uf.FileId AND ar.ObjectTypeId = 2
+	LEFT JOIN Folder f ON ar.ObjectId = f.FolderId AND ar.ObjectTypeId = 1
+	WHERE (uf.OwnerId = 11 OR f.OwnerId = 11)
+)
+SELECT 
+	ro.ObjectId,
+	ro.ObjectTypeId,
+	ro.ObjectType,
+	CASE 
+		WHEN ro.ObjectType = N'File' THEN uf.UserFileName
+		WHEN ro.ObjectType = N'Folder' THEN f.FolderName
+		ELSE NULL
+	END AS ObjectName,
+	ro.ActionLog,
+	ro.ActionDateTime
+FROM RecentObjects ro
+LEFT JOIN UserFile uf ON ro.ObjectId = uf.FileId AND ro.ObjectTypeId = 2
+LEFT JOIN Folder f ON ro.ObjectId = f.FolderId AND ro.ObjectTypeId = 1
+WHERE ro.FileOwnerId = 11 OR ro.FolderOwnerId = 11
+ORDER BY ro.ActionDateTime DESC;
+
+SELECT * FROM ActionRecent
+SELECT * FROM UserFile
+SELECT * FROM Folder WHERE OwnerId = 11 AND FolderId = 37

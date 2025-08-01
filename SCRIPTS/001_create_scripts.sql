@@ -40,7 +40,7 @@ IF OBJECT_ID('dbo.[SettingUser]', 'U') IS NOT NULL DROP TABLE dbo.[SettingUser];
 IF OBJECT_ID('dbo.[Color]', 'U') IS NOT NULL DROP TABLE dbo.[Color];
 GO
 
-CREATE TABLE [User] (
+CREATE TABLE Users (
     UserId INT PRIMARY KEY IDENTITY(1,1),
     Name NVARCHAR(50) NOT NULL,
     Email NVARCHAR(50) UNIQUE NOT NULL,
@@ -83,7 +83,7 @@ CREATE TABLE Folder (
 	Status VARCHAR(50),
 	ColorId int,
     FOREIGN KEY (ParentId) REFERENCES Folder(FolderId),
-    FOREIGN KEY (OwnerId) REFERENCES [User](UserId),
+    FOREIGN KEY (OwnerId) REFERENCES Users(UserId),
     FOREIGN KEY (ColorId) REFERENCES Color(ColorId)
 );
 GO
@@ -95,7 +95,7 @@ CREATE TABLE FileType (
 );
 GO
 
-CREATE TABLE [File] (
+CREATE TABLE Files (
     FileId INT PRIMARY KEY IDENTITY(1,1),
     FolderId INT,
     OwnerId INT NOT NULL,
@@ -107,7 +107,7 @@ CREATE TABLE [File] (
     Status NVARCHAR(50),
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     FOREIGN KEY (FolderId) REFERENCES Folder(FolderId),
-    FOREIGN KEY (OwnerId) REFERENCES [User](UserId),
+    FOREIGN KEY (OwnerId) REFERENCES Users(UserId),
     FOREIGN KEY (FileTypeId) REFERENCES FileType(FileTypeId)
 );
 GO
@@ -120,7 +120,7 @@ CREATE TABLE Share (
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 	Url varchar(50),
 	UrlApprove bit,
-    FOREIGN KEY (Sharer) REFERENCES [User](UserId),
+    FOREIGN KEY (Sharer) REFERENCES Users(UserId),
     FOREIGN KEY (ObjectTypeId) REFERENCES ObjectType(ObjectTypeId)
 );
 GO
@@ -131,7 +131,7 @@ CREATE TABLE SharedUser (
     UserId INT,
     PermissionId INT,
     FOREIGN KEY (ShareId) REFERENCES Share(ShareId),
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (PermissionId) REFERENCES Permission(PermissionId)
 );
 GO
@@ -146,8 +146,8 @@ CREATE TABLE FileVersion (
     IsCurrent BIT,
     VersionFile NVARCHAR(MAX),
     Size BIGINT,
-    FOREIGN KEY (FileId) REFERENCES [File](FileId),
-    FOREIGN KEY (UpdateBy) REFERENCES [User](UserId)
+    FOREIGN KEY (FileId) REFERENCES Files(FileId),
+    FOREIGN KEY (UpdateBy) REFERENCES Users(UserId)
 );
 GO
 
@@ -158,12 +158,12 @@ CREATE TABLE Trash (
     RemovedDatetime DATETIME2,
     UserId INT,
     IsPermanent BIT DEFAULT 0,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (ObjectTypeId) REFERENCES ObjectType(ObjectTypeId)
 );
 GO
 
-CREATE TABLE [Product] (
+CREATE TABLE Products (
     ProductId INT PRIMARY KEY IDENTITY(1,1),
     Name NVARCHAR(50) NOT NULL,
     Cost DECIMAL(10,2) NOT NULL,
@@ -187,8 +187,8 @@ CREATE TABLE UserProduct (
     IsFirstPaying BIT,
     PromotionId INT,
     EndDatetime DATETIME2,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
-    FOREIGN KEY (ProductId) REFERENCES [Product](ProductId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
+    FOREIGN KEY (ProductId) REFERENCES Products(ProductId),
     FOREIGN KEY (PromotionId) REFERENCES Promotion(PromotionId)
 );
 GO
@@ -198,8 +198,8 @@ CREATE TABLE BannedUser (
     UserId INT,
     BannedAt DATETIME2,
     BannedUserId INT,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
-    FOREIGN KEY (BannedUserId) REFERENCES [User](UserId)
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
+    FOREIGN KEY (BannedUserId) REFERENCES Users(UserId)
 );
 GO
 
@@ -208,7 +208,7 @@ CREATE TABLE FavoriteObject (
     OwnerId INT,
     ObjectId INT NOT NULL,
     ObjectTypeId INT NOT NULL,
-    FOREIGN KEY (OwnerId) REFERENCES [User](UserId),
+    FOREIGN KEY (OwnerId) REFERENCES Users(UserId),
     FOREIGN KEY (ObjectTypeId) REFERENCES ObjectType(ObjectTypeId)
 );
 GO
@@ -220,7 +220,7 @@ CREATE TABLE Recent (
 	ObjectTypeId INT,
     Log NVARCHAR(MAX),
     DateTime DATETIME2,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (ObjectTypeId) REFERENCES ObjectType(ObjectTypeId)
 );
 GO
@@ -228,19 +228,19 @@ GO
 CREATE TABLE SearchHistory (
 SearchId INT PRIMARY KEY IDENTITY(1,1),
 UserId INT,
-FOREIGN KEY (UserId) REFERENCES [User](UserId),
+FOREIGN KEY (UserId) REFERENCES Users(UserId),
 SearchToken NVARCHAR(MAX),
 SearchDatetime DATETIME,
 );
 
 
-CREATE TABLE [Session] (
+CREATE TABLE Sessionss (
     SessionId INT PRIMARY KEY IDENTITY(1,1),
     UserId INT,
     Token NVARCHAR(50) NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
     ExpiresAt DATETIME,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId)
+    FOREIGN KEY (UserId) REFERENCES Users(UserId)
 );
 GO
 
@@ -256,13 +256,13 @@ CREATE TABLE SettingUser(
     SettingUserId INT PRIMARY KEY IDENTITY(1,1),
     SettingId INT,
     UserId INT,
-    FOREIGN KEY (UserId) REFERENCES [User](UserId),
+    FOREIGN KEY (UserId) REFERENCES Users(UserId),
     FOREIGN KEY (SettingId ) REFERENCES [Setting](SettingId )
 );
 GO
 
 
-CREATE INDEX idx_file_name ON [File](Name);
+CREATE INDEX idx_file_name ON Files(Name);
 CREATE INDEX idx_folder_name ON Folder(Name);
 GO
 
@@ -306,7 +306,7 @@ GO
 CREATE TABLE FileContent (
     ContentId INT PRIMARY KEY IDENTITY(1,1),
     FileId INT NOT NULL,
-    FOREIGN KEY (FileId) REFERENCES [File](FileId),
+    FOREIGN KEY (FileId) REFERENCES Files(FileId),
     ContentChunk NVARCHAR(MAX),
     ChunkIndex INT NOT NULL,
     CreatedAt DATETIME DEFAULT GETDATE()

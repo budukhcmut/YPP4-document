@@ -1,7 +1,7 @@
-USE GoogleDrive
+﻿USE GoogleDrive
 GO
 
-INSERT INTO [User] (Name, Email, PasswordHash, CreatedAt, LastLogin, UsedCapacity, Capacity)
+INSERT INTO Users (Name, Email, PasswordHash, CreatedAt, LastLogin, UsedCapacity, Capacity)
 SELECT TOP 1000
     'User' + CAST(n AS NVARCHAR(255)),
     'user' + CAST(n AS NVARCHAR(255)) + '@example.com',
@@ -10,8 +10,10 @@ SELECT TOP 1000
     DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 30), GETDATE()),
     ABS(CHECKSUM(NEWID()) % 1000000000),
     10000000000
-FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
-      FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
+FROM (
+    SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n
+    FROM master.dbo.spt_values -- hoặc sys.all_objects nếu cần nhiều dòng hơn
+) AS nums
 WHERE n BETWEEN 1 AND 1000;
 GO
 
@@ -63,7 +65,7 @@ SELECT TOP 200
     ABS(CHECKSUM(NEWID()) % 10) + 1
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE n BETWEEN 1 AND 200;
 
 -- Insert child folders (800 rows)
@@ -80,7 +82,7 @@ SELECT TOP 800
     ABS(CHECKSUM(NEWID()) % 10) + 1
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE n BETWEEN 1 AND 800;
 
 -- Update paths for child folders
@@ -133,7 +135,7 @@ VALUES
 GO
 
 -- 7. Populate [File] table (1000 rows)
-INSERT INTO [File] (FolderId, OwnerId, Size, Name, Path, FileTypeId, ModifiedDate, Status, CreatedAt)
+INSERT INTO Files (FolderId, OwnerId, Size, Name, Path, FileTypeId, ModifiedDate, Status, CreatedAt)
 SELECT TOP 1000
     f.FolderId,
     u.UserId,
@@ -146,7 +148,7 @@ SELECT TOP 1000
     DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 365), GETDATE())
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 CROSS JOIN (SELECT TOP 1000 FolderId, Path FROM Folder ORDER BY NEWID()) f
 WHERE n BETWEEN 1 AND 1000;
 GO
@@ -166,7 +168,7 @@ FROM (
 ) AS nums
 CROSS JOIN (
     SELECT TOP 1000 UserId
-    FROM [User]
+    FROM Users
     ORDER BY NEWID()
 ) u
 CROSS JOIN (
@@ -188,7 +190,7 @@ SELECT TOP 1000
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
 CROSS JOIN (SELECT TOP 1000 ShareId FROM Share ORDER BY NEWID()) s
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE s.ShareId <= 1000 AND u.UserId <= 1000 AND n BETWEEN 1 AND 1000;
 GO
 
@@ -205,8 +207,8 @@ SELECT TOP 1000
     ABS(CHECKSUM(NEWID()) % 1000000000)
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 FileId, Path FROM [File] ORDER BY NEWID()) f
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 FileId, Path FROM Files ORDER BY NEWID()) f
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE n BETWEEN 1 AND 1000;
 GO
 
@@ -220,17 +222,17 @@ SELECT TOP 1000
     CASE WHEN n % 10 = 0 THEN 1 ELSE 0 END
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 CROSS JOIN (
     SELECT TOP 500 FolderId AS ObjectId, 1 AS ObjectTypeId FROM Folder ORDER BY NEWID()
     UNION
-    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM [File] ORDER BY NEWID()
+    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM Files ORDER BY NEWID()
 ) o
 WHERE n BETWEEN 1 AND 1000;
 GO
 
 -- 12. Populate Product table (4 rows)
-INSERT INTO [Product] (Name, Cost, Duration)
+INSERT INTO Products (Name, Cost, Duration)
 VALUES 
     ('30gb', 19000, 30),
     ('30gb', 190000, 365),
@@ -258,8 +260,8 @@ SELECT TOP 1000
     DATEADD(DAY, ABS(CHECKSUM(NEWID()) % 365), GETDATE())
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
-CROSS JOIN (SELECT TOP 4 ProductId FROM [Product] ORDER BY NEWID()) p
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 4 ProductId FROM Products ORDER BY NEWID()) p
 CROSS JOIN (SELECT TOP 4 PromotionId FROM Promotion ORDER BY NEWID()) pr
 WHERE n BETWEEN 1 AND 1000;
 GO
@@ -275,8 +277,8 @@ FROM (
         u1.UserId,
         u2.UserId AS BannedUserId,
         ROW_NUMBER() OVER (ORDER BY NEWID()) AS rn
-    FROM [User] u1
-    CROSS JOIN [User] u2
+    FROM Users u1
+    CROSS JOIN Users u2
     WHERE u1.UserId != u2.UserId
 ) AS UserPairs
 WHERE rn BETWEEN 1 AND 1000;
@@ -289,11 +291,11 @@ SELECT TOP 1000
     o.ObjectTypeId
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 CROSS JOIN (
     SELECT TOP 500 FolderId AS ObjectId, 1 AS ObjectTypeId FROM Folder ORDER BY NEWID()
     UNION
-    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM [File] ORDER BY NEWID()
+    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM Files ORDER BY NEWID()
 ) o
 WHERE n BETWEEN 1 AND 1000;
 GO
@@ -312,7 +314,7 @@ FROM (
 ) AS nums
 CROSS JOIN (
     SELECT TOP 1000 UserId
-    FROM [User]
+    FROM Users
     ORDER BY NEWID()
 ) u
 WHERE nums.n BETWEEN 1 AND 1000;
@@ -326,12 +328,12 @@ SELECT TOP 1000
     DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 30), GETDATE())
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE n BETWEEN 1 AND 1000;
 GO
 
 -- 19. Populate [Session] table (1000 rows)
-INSERT INTO [Session] (UserId, Token, CreatedAt, ExpiresAt)
+INSERT INTO Sessionss (UserId, Token, CreatedAt, ExpiresAt)
 SELECT TOP 1000
     u.UserId,
     NEWID(),
@@ -339,7 +341,7 @@ SELECT TOP 1000
     DATEADD(DAY, ABS(CHECKSUM(NEWID()) % 30), GETDATE())
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 WHERE n BETWEEN 1 AND 1000;
 GO
 
@@ -385,7 +387,7 @@ SELECT TOP 1000
     s.SettingId
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 UserId FROM [User] ORDER BY NEWID()) u
+CROSS JOIN (SELECT TOP 1000 UserId FROM Users ORDER BY NEWID()) u
 CROSS JOIN (SELECT TOP 30 SettingId FROM Setting ORDER BY NEWID()) s
 WHERE n BETWEEN 1 AND 1000;
 GO
@@ -399,7 +401,7 @@ SELECT TOP 1000
     DATEADD(DAY, -ABS(CHECKSUM(NEWID()) % 365), GETDATE())
 FROM (SELECT ROW_NUMBER() OVER (ORDER BY (SELECT NULL)) AS n 
       FROM sys.objects s1 CROSS JOIN sys.objects s2) AS nums
-CROSS JOIN (SELECT TOP 1000 FileId FROM [File] ORDER BY NEWID()) f
+CROSS JOIN (SELECT TOP 1000 FileId FROM Files ORDER BY NEWID()) f
 WHERE n BETWEEN 1 AND 1000;
 GO
 
@@ -414,7 +416,7 @@ SELECT TOP 1000
 FROM (
     SELECT TOP 500 FolderId AS ObjectId, 1 AS ObjectTypeId FROM Folder ORDER BY NEWID()
     UNION
-    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM [File] ORDER BY NEWID()
+    SELECT TOP 500 FileId AS ObjectId, 2 AS ObjectTypeId FROM Files ORDER BY NEWID()
 ) AS Objects;
 GO
 
