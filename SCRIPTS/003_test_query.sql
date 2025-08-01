@@ -1,4 +1,4 @@
-﻿	a.Email as Email
+﻿
 USE GoogleDrive
 GO
 
