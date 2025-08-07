@@ -1,36 +1,71 @@
 import { Injectable } from '@nestjs/common';
 
+export interface JoinOptions {
+  leftKey: string;
+  rightKey: string;
+}
+
 @Injectable()
-export class AreagateFunctionService {
-  performInnerJoin(table1: any[], table2: any[], key1: string, key2: string) {
-    return table1
-      .filter(t1 => table2.some(t2 => t1[key1] === t2[key2]))
-      .map(t1 => {
-        const match = table2.find(t2 => t1[key1] === t2[key2]);
-        return { ...t1, ...match };
-      });
+export class AreegateFunctionService {
+  innerJoin(
+    leftTable: Record<string, unknown>[],
+    rightTable: Record<string, unknown>[],
+    joinOptions: JoinOptions,
+  ): Record<string, unknown>[] {
+    const result: Record<string, unknown>[] = [];
+
+    for (const left of leftTable) {
+      for (const right of rightTable) {
+        if (left[joinOptions.leftKey] === right[joinOptions.rightKey]) {
+          result.push({ ...left, ...right });
+        }
+      }
+    }
+
+    return result;
   }
 
-  performLeftJoin(table1: any[], table2: any[], key1: string, key2: string) {
-    return table1.map(t1 => {
-      const match = table2.find(t2 => t1[key1] === t2[key2]);
-      return match ? { ...t1, ...match } : { ...t1 };
-    });
+  leftJoin(
+    leftTable: Record<string, unknown>[],
+    rightTable: Record<string, unknown>[],
+    joinOptions: JoinOptions,
+  ): Record<string, unknown>[] {
+    const result: Record<string, unknown>[] = [];
+
+    for (const left of leftTable) {
+      let hasMatch: boolean = false;
+
+      for (const right of rightTable) {
+        if (left[joinOptions.leftKey] === right[joinOptions.rightKey]) {
+          result.push({ ...left, ...right });
+          hasMatch = true;
+        }
+      }
+
+      if (!hasMatch) {
+        result.push({ ...left, [joinOptions.rightKey]: null });
+      }
+    }
+
+    return result;
   }
 
-  performRightJoin(table1: any[], table2: any[], key1: string, key2: string) {
-    return table2.map(t2 => {
-      const match = table1.find(t1 => t1[key1] === t2[key2]);
-      return match ? { ...match, ...t2 } : { ...t2 };
-    });
-  }
+  crossJoin(
+    leftTable: Record<string, unknown>[],
+    rightTable: Record<string, unknown>[],
+  ) {
+    const result: Record<string, unknown>[] = [];
 
-  performCrossJoin(table1: any[], table2: any[]) {
-    return table1.flatMap(t1 =>
-      table2.map(t2 => ({
-        table1: { ...t1 },
-        table2: { ...t2 },
-      }))
-    );
+    if (leftTable.length === 0 || rightTable.length === 0) {
+      return result;
+    }
+
+    for (const left of leftTable) {
+      for (const right of rightTable) {
+        result.push({ ...left, ...right });
+      }
+    }
+
+    return result;
   }
 }
