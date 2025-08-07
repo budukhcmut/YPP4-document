@@ -3,15 +3,16 @@ USE GoogleDrive
 GO
 
 -- Home screen
--- 1.SELECT User information
+--SLIDE 1
+-- 1.SELECT User information 
 DECLARE @userId INT = 1
 SELECT 
 	a.UserName AS UserName,
 	a.Email AS Email
 FROM Account a
 WHERE a.UserId = @userId 
-
--- 2.SELECT User Setting
+--SLIDE 2
+-- 1.SELECT User Setting
 DECLARE @userId INT = 1;
 SELECT 
 	su.SettingUserId,
@@ -22,8 +23,8 @@ FROM SettingUser su
 JOIN Account a ON su.UserId = a.UserId
 JOIN AppSetting s ON su.SettingId = s.SettingId
 WHERE a.UserId = @userId
-
--- 3.RECOMMENT file
+--SLIDE 3
+-- 1.RECOMMENT file
 DECLARE @userId INT = 2
 SELECT TOP 10
 	f.FileId,
@@ -39,7 +40,7 @@ ORDER BY ar.ActionDateTime DESC
 
 SELECT * FROM ActionRecent
 
--- 4.RECOMMENT folder
+-- 2.RECOMMENT folder
 DECLARE @userId INT = 3
 SELECT TOP 10
 	fo.FolderId,
@@ -52,8 +53,22 @@ JOIN Account a ON ar.UserId = a.UserId
 JOIN Folder fo ON ar.ObjectTypeId = 1 AND ar.ObjectId = fo.FolderId
 WHERE ar.UserId = @userId  
 ORDER BY ar.ActionDateTime DESC
+ 
+ -- 3. SELECT LOGIN USER VIEW SETTING
 
 
+ --SLIDE 4
+ --1 . Select ActionRecent of folder/file
+ DECLARE @userID INT =1 
+ SELECT ar.ObjectTypeId , ar.ObjectId , ar .ActionLog , ar.ActionDateTime 
+ FROM ActionRecent ar
+ JOIN Account a ON a.UserId = ar.UserId 
+ LEFT JOIN UserFile uf ON uf.FileId = ar.ObjectId AND ar.ObjectTypeId = 2 
+ LEFT JOIN Folder f ON f.FolderId = ar.ObjectId AND ar.ObjectTypeId = 1
+ WHERE a.UserId = @userId
+ ORDER BY ar.ActionDateTime 
+
+--SLIDE 5
 -- My Drive Screen
 -- 1.SELECT login user file
 DECLARE @LoginUser INT = 1 
@@ -75,6 +90,7 @@ FROM Folder fo
 JOIN Account a ON fo.OwnerId = a.UserId
 WHERE a.UserId = @userId
 
+--SLIDE 6
 -- Share with me Screen
 -- 1.SELECT shared file with login user
 DECLARE @userId INT = 102
@@ -101,97 +117,6 @@ JOIN Account a ON su.UserId = a.UserId
 JOIN Share s ON su.ShareId = s.ShareId
 JOIN Folder fo ON s.ObjectTypeId = 1 AND s.ObjectId = fo.FolderId
 WHERE su.UserId = @userId
-
-
--- Trash screen
--- 1.SELECT file have been deleted
-DECLARE @userId INT = 704
-SELECT
-	f.FileId,
-	t.TrashId,
-	ot.ObjectTypeName,
-	f.UserFileName,
-	t.RemovedDatetime,
-	t.IsPermanent
-FROM Trash t
-JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
-JOIN UserFile f ON t.ObjectTypeId = 2 AND t.ObjectId = f.FileId
-WHERE t.UserId = @userId;
-
-
--- 2.SELECT folder have been deleted
-DECLARE @userId INT = 1
-SELECT 
-	fo.FolderId,
-	t.TrashId,
-	ot.ObjectTypeName,
-	fo.FolderName,
-	t.RemovedDatetime,
-	t.IsPermanent
-FROM Trash t
-JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
-JOIN Folder fo ON t.ObjectTypeId = 1 AND t.ObjectId = fo.FolderId
-WHERE t.UserId = @userId;
-
--- Starred screen
--- 1.SELECT file
-DECLARE @userId INT = 794
-SELECT 
-	f.FileId,
-	f.UserFileName,
-	a.UserName AS FileOwnerName,
-	a.UserId AS UserId,
-	ft.FileTypeName
-FROM FavoriteObject fa
-LEFT JOIN UserFile f ON fa.ObjectTypeId = 2 AND fa.ObjectId = f.FileId
-LEFT JOIN Account a ON f.OwnerId = a.UserId 
-JOIN FileType ft ON f.FileTypeId = ft.FileTypeId
-WHERE fa.OwnerId = @userId
-
-
-
--- Product Screen
--- SELECT all of product
-SELECT
-	ProductId,
-	ProductName,
-	Cost,
-	Duration
-FROM ProductItem
-
--- SELECT Product bought by user
-DECLARE @userId INT = 100
-SELECT 
-	pro.ProductId,
-	pro.ProductName,
-	a.UserId,
-	a.UserName,
-	CASE
-		WHEN po.IsPercent = 1 THEN pro.Cost - (pro.Cost * (po.Discount / 100))
-		ELSE pro.Cost - po.Discount
-	END AS TotalCost
-FROM UserProduct up
-JOIN Account a ON up.UserId = a.UserId
-JOIN Promotion po ON up.PromotionId = po.PromotionId
-JOIN ProductItem pro ON up.ProductId = pro.ProductId
-WHERE up.UserId = @userId
-
-
-
--- SELECT Top 10 Payers 
-SELECT TOP 10
-	a.UserId,
-	pro.ProductName,
-	a.UserName,
-	CASE
-		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
-		ELSE pro.Cost - po.Discount
-	END AS TotalCost
-FROM UserProduct up
-JOIN Account a ON up.UserId = a.UserId
-JOIN ProductItem pro ON up.ProductId = pro.ProductId
-JOIN Promotion po ON up.PromotionId = po.PromotionId
-ORDER BY TotalCost DESC
 
 -- SELECT folder shared for user with userid = 101
 DECLARE @userId INT = 101
@@ -222,19 +147,69 @@ LEFT JOIN UserFile f ON s.ObjectTypeId = 2 AND f.FileId = s.ObjectId
 WHERE su.UserId = @userId
 
 
--- SELECT top 5 largest file of login-user 
-DECLARE @userId INT = 4
-SELECT DISTINCT TOP 5
+
+-- SLIDE 7
+--1.Select File/Folder which recent action 
+
+
+
+
+
+ 
+--SLIDE 8
+-- Starred screen
+-- 1.SELECT file
+DECLARE @userId INT = 794
+SELECT 
+	f.FileId,
 	f.UserFileName,
-	a.UserName AS OwnerName,
-	f.Size AS FileSize
-FROM UserFile f
-JOIN Account a ON f.OwnerId = a.UserId
-WHERE f.OwnerId = @userId
-ORDER BY f.Size DESC
+	a.UserName AS FileOwnerName,
+	a.UserId AS UserId,
+	ft.FileTypeName
+FROM FavoriteObject fa
+LEFT JOIN UserFile f ON fa.ObjectTypeId = 2 AND fa.ObjectId = f.FileId
+LEFT JOIN Account a ON f.OwnerId = a.UserId 
+JOIN FileType ft ON f.FileTypeId = ft.FileTypeId
+WHERE fa.OwnerId = @userId
+
+--SLIDE 9
+-- Trash screen
+-- 1.SELECT file have been deleted
+DECLARE @userId INT = 704
+SELECT
+	f.FileId,
+	t.TrashId,
+	ot.ObjectTypeName,
+	f.UserFileName,
+	t.RemovedDatetime,
+	t.IsPermanent
+FROM Trash t
+JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
+JOIN UserFile f ON t.ObjectTypeId = 2 AND t.ObjectId = f.FileId
+WHERE t.UserId = @userId;
+
+
+-- 2.SELECT folder have been deleted
+DECLARE @userId INT = 1
+SELECT 
+	fo.FolderId,
+	t.TrashId,
+	ot.ObjectTypeName,
+	fo.FolderName,
+	t.RemovedDatetime,
+	t.IsPermanent
+FROM Trash t
+JOIN ObjectType ot ON t.ObjectTypeId = ot.ObjectTypeId
+JOIN Folder fo ON t.ObjectTypeId = 1 AND t.ObjectId = fo.FolderId
+WHERE t.UserId = @userId;
+
+--SLIDE 10
+--1.Select login User capacity and UsedCapacity of login user
 
 
 
+
+--SILDE 11
 -- SELECT banned user of login-user
 DECLARE @userId INT = 533
 SELECT 
@@ -247,6 +222,65 @@ JOIN Account Banned ON BU.UserId = Banned.UserId
 JOIN Account Banner ON BU.BannedUserId = Banner.UserId
 WHERE BU.UserId = @userId
 ORDER BY BU.BannedAt DESC;
+
+
+--SLIDE 12
+-- Product Screen
+-- 1 .SELECT all of product
+SELECT
+	ProductId,
+	ProductName,
+	Cost,
+	Duration
+FROM ProductItem
+
+-- 2. SELECT Product bought by user
+DECLARE @userId INT = 100
+SELECT 
+	pro.ProductId,
+	pro.ProductName,
+	a.UserId,
+	a.UserName,
+	CASE
+		WHEN po.IsPercent = 1 THEN pro.Cost - (pro.Cost * (po.Discount / 100))
+		ELSE pro.Cost - po.Discount
+	END AS TotalCost
+FROM UserProduct up
+JOIN Account a ON up.UserId = a.UserId
+JOIN Promotion po ON up.PromotionId = po.PromotionId
+JOIN ProductItem pro ON up.ProductId = pro.ProductId
+WHERE up.UserId = @userId
+
+
+
+-- 3 . SELECT Top 10 Payers 
+SELECT TOP 10
+	a.UserId,
+	pro.ProductName,
+	a.UserName,
+	CASE
+		WHEN po.IsPercent = 1 THEN pro.Cost * (po.Discount / 100)
+		ELSE pro.Cost - po.Discount
+	END AS TotalCost
+FROM UserProduct up
+JOIN Account a ON up.UserId = a.UserId
+JOIN ProductItem pro ON up.ProductId = pro.ProductId
+JOIN Promotion po ON up.PromotionId = po.PromotionId
+ORDER BY TotalCost DESC
+
+-----------------------------------------------------------------------------------------
+
+-- SELECT top 5 largest file of login-user 
+DECLARE @userId INT = 4
+SELECT DISTINCT TOP 5
+	f.UserFileName,
+	a.UserName AS OwnerName,
+	f.Size AS FileSize
+FROM UserFile f
+JOIN Account a ON f.OwnerId = a.UserId
+WHERE f.OwnerId = @userId
+ORDER BY f.Size DESC
+
 
 -- SELECT product bought by user 
 DECLARE @userId INT = 100
@@ -324,6 +358,8 @@ JOIN Account a ON fo.OwnerId = a.UserId
 JOIN Color c ON fo.ColorId = c.ColorId
 WHERE fo.OwnerId = @userId
 
+
+
 -- SELECT children of folder
 DECLARE @FolderId INT = 1;
 WITH RecursiveFolders AS (
@@ -346,6 +382,8 @@ LEFT JOIN Folder fo ON rf.ParentId = fo.FolderId
 WHERE rf.FolderId != 1
 ORDER BY rf.FolderPath;
 
+
+--FULL_TEXT_SEARCH
 -- Full-text search query
 SELECT 
 	uf.FileId,
@@ -359,6 +397,10 @@ JOIN UserFile uf ON fc.FileId = uf.FileId
 WHERE s.Term IN ('project', 'proposal', 'employ')
 ORDER BY s.Bm25Score
 
+
+
+
+-- SORT USERFILE
 -- Sort UserFile By ShareUser
 DECLARE @Sharer INT = 2
 DECLARE @shared INT = 102
