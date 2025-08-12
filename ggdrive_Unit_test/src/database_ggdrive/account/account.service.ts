@@ -1,109 +1,62 @@
 import { Injectable } from '@nestjs/common';
-import { Account } from '../entities/account.entity';
+import { Account } from './entities/account.entity';
+import { AccountRepository } from './account.repository';
+import { CreateAccountDto } from './dto/create-account.dto';
 
 @Injectable()
 export class AccountService {
-  private accounts: Account[] = [];
+  private _mockData: Account[] = [];
+  private _nextId = 1;
 
-  create(account: Account): Account {
-    const email = account.Email.trim().toLowerCase();
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      throw new Error('Định dạng email không hợp lệ');
-    }
+  get mockData(): Account[] {
+    return this._mockData;
+  }
 
-    if (!account.PasswordHash || account.PasswordHash.trim() === '') {
-      throw new Error('Mật khẩu không được để trống');
-    }
+  set mockData(data: Account[]) {
+    this._mockData = data;
+  }
 
-    if (
-      account.PasswordHash.length < 8 ||
-      !/[A-Z]/.test(account.PasswordHash) ||
-      !/\d/.test(account.PasswordHash)
-    ) {
-      throw new Error(
-        'Mật khẩu phải dài ít nhất 8 ký tự, chứa ít nhất một chữ hoa và một số',
-      );
-    }
+  get nextId(): number {
+    return this._nextId;
+  }
 
-    if (!account.Username) {
-      throw new Error('Tên người dùng là bắt buộc');
-    }
+  set nextId(id: number) {
+    this._nextId = id;
+  }
 
-    const existingAccount = this.accounts.find(
-      (acc) => acc.Email.toLowerCase() === email,
-    );
-    if (existingAccount) {
-      throw new Error('Tài khoản với email này đã tồn tại');
-    }
+  constructor(private readonly accountRepository: AccountRepository) {}
 
-    account.UserId = this.accounts.length + 1;
-    this.accounts.push(account);
+  create(createAccountDto: CreateAccountDto) {
+    const account = this.accountRepository.create({
+      userName: createAccountDto.userName,
+      email: createAccountDto.email,
+      passwordHash: createAccountDto.passwordHash,
+      userImg: createAccountDto.userImg,
+      usedCapacity: createAccountDto.usedCapacity,
+      capacity: createAccountDto.capacity,
+    });
+    this._mockData.push(account);
+    this._nextId = Math.max(...this._mockData.map((a) => a.userId)) + 1;
     return account;
   }
 
   findAll(): Account[] {
-    return this.accounts;
+    const sql = `SELECT * FROM Account`;
+    console.log('🟢 SQL EXECUTED:', sql);
+    return this._mockData;
   }
 
-  findOne(id: number): Account {
-    const account = this.accounts.find((acc) => acc.UserId === id);
-
-    if (!account) {
-      throw new Error('Tài khoản không tồn tại');
-    }
-
-    return account;
+  getAccountById(userId: number): Account | null {
+    const sql = `SELECT * FROM Account WHERE UserId = ${userId}`;
+    console.log('🟢 SQL EXECUTED:', sql);
+    return this._mockData.find((a) => a.userId === userId) ?? null;
   }
 
-  update(id: number, account: Account): Account {
-    const index = this.accounts.findIndex((acc) => acc.UserId === id);
-
-    if (index === -1) {
-      throw new Error('Tài khoản không tồn tại');
-    }
-
-    const email = account.Email.trim().toLowerCase();
-
-    if (!email.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      throw new Error('Định dạng email không hợp lệ');
-    }
-
-    if (!account.PasswordHash || account.PasswordHash.trim() === '') {
-      throw new Error('Mật khẩu không được để trống');
-    }
-
-    if (
-      account.PasswordHash.length < 8 ||
-      !/[A-Z]/.test(account.PasswordHash) ||
-      !/\d/.test(account.PasswordHash)
-    ) {
-      throw new Error(
-        'Mật khẩu phải dài ít nhất 8 ký tự, chứa ít nhất một chữ hoa và một số',
-      );
-    }
-
-    if (!account.Username) {
-      throw new Error('Tên người dùng là bắt buộc');
-    }
-
-    const existingAccount = this.accounts.find(
-      (acc) => acc.Email.toLowerCase() === email && acc.UserId !== id,
-    );
-    if (existingAccount) {
-      throw new Error('Tài khoản với email này đã tồn tại');
-    }
-
-    this.accounts[index] = account;
-    return account;
-  }
-
-  remove(id: number): void {
-    const index = this.accounts.findIndex((acc) => acc.UserId === id);
-
-    if (index === -1) {
-      throw new Error('Tài khoản không tồn tại');
-    }
-
-    this.accounts.splice(index, 1);
+  delete(userId: number): boolean {
+    const sql = `DELETE FROM Account WHERE UserId = ${userId}`;
+    console.log('🟢 SQL EXECUTED:', sql);
+    const lengthBefore = this._mockData.length;
+    this._mockData = this._mockData.filter((a) => a.userId !== userId);
+    return this._mockData.length < lengthBefore;
   }
 }
