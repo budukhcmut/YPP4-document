@@ -7,6 +7,7 @@ import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { AccountRepository } from './account.repository';
 import { Account } from '../../entities/account.entity'; 
+import { CacheService } from '../../utils/cache.service';
 
 describe('AccountController (raw SQL query)', () => {
   let controller: AccountController;
@@ -23,7 +24,7 @@ describe('AccountController (raw SQL query)', () => {
         TypeOrmModule.forFeature([Account]),
       ],
       controllers: [AccountController],
-      providers: [AccountRepository, AccountService],
+      providers: [AccountRepository, AccountService , CacheService],
     }).compile();
 
     controller = module.get<AccountController>(AccountController);
