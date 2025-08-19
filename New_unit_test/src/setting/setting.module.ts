@@ -7,7 +7,7 @@ import { SettingController } from './setting.controller';
 import { SettingUser } from '../../entities/settinguser.entity';
 import { AppSetting } from '../../entities/appsetting.entity';
 import { Account } from '../../entities/account.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([SettingUser, AppSetting, Account])],

@@ -3,7 +3,7 @@ import { DataSource, Repository } from 'typeorm';
 import { BasicInfoDto } from './dto/account.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Account } from '../../entities/account.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Injectable()
 export class AccountRepository {
@@ -30,7 +30,7 @@ export class AccountRepository {
       
       `, [userId]);
     
-      this.cacheService.set(cacheKey, user, 3600); 
+      this.cacheService.set(cacheKey, user); 
 
     return user ;
     }

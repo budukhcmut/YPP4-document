@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { Share } from '../../entities/share.entity';
 import { SharedFileDto } from './dto/sharefile.dto';
 import { SharedFolderDto } from './dto/sharefolder.dto';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 
 @Injectable()

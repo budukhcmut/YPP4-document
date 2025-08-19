@@ -7,7 +7,7 @@ import { BasicInfoDto } from './dto/account.dto';
 export class AccountController {
   constructor(private readonly accountService: AccountService) {}
 
-  @Get('getBasicInfo')
+  
   async findBasicInfo(userId: number): Promise<BasicInfoDto | null> {
     return await this.accountService.findBasicInfo(userId);
   }

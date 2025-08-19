@@ -6,7 +6,7 @@ import { UserFile } from '../../entities/userfile.entity';
 import { UserFileController } from './userfile.controller';
 import { UserFileRepository } from './userfile.repository';
 import { UserFileService } from './userfile.service';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 
 

@@ -4,7 +4,7 @@ import { Repository } from 'typeorm';
 
 import { SettingUserDto } from './dto/setting.dto';
 import { SettingUser } from '../../entities/settinguser.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Injectable()
 export class SettingRepository {

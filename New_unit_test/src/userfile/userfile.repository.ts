@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserFile } from '../../entities/userfile.entity';
 import { UserFileFullDto } from './dto/userfilefull.dto';
 import { Repository } from 'typeorm';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 
 @Injectable()
