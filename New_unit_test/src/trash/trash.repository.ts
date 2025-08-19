@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Trash } from '../../entities/trash.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 import { FileTrashDto } from './dto/filetrash.dto';
 import { FolderTrashDto } from './dto/foldertrash.dto';
 

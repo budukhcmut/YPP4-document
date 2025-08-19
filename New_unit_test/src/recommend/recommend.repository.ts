@@ -5,7 +5,7 @@ import { Repository } from 'typeorm';
 import { ActionRecent } from '../../entities/actionrecent.entity';
 import { RecommendFileDto } from './dto/recommendfile.dto';
 import { RecommendFolderDto } from './dto/recmmendfolder.dto';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Injectable()
 export class RecommendRepository {

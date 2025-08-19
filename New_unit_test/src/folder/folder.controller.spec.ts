@@ -6,7 +6,7 @@ import { FolderController } from './folder.controller';
 import { FolderService } from './folder.service';
 import { FolderRepository } from './folder.repository';
 import { Folder } from '../../entities/folder.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 describe('AccountController (raw SQL query)', () => {
   let controller: FolderController;
@@ -43,6 +43,7 @@ controller = module.get<FolderController>(FolderController);
       const result = await controller.findMyFolders(userId);
       expect(result).toBeDefined();
       expect(Array.isArray(result)).toBe(true);
+
     });
 
     it('should return an empty array for a non-existent user', async () => {

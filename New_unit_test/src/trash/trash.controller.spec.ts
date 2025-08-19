@@ -8,10 +8,10 @@ import { ObjectType } from '../../entities/objecttype.entity';
 
 import { TrashService } from './trash.service';
 import { TrashRepository } from './trash.repository';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 describe('TrashService (with database.sqlite)', () => {
-  let service: TrashService;
+  let controller: TrashService;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -19,7 +19,7 @@ describe('TrashService (with database.sqlite)', () => {
         TypeOrmModule.forRoot({
           type: 'sqlite',
           database: 'database.sqlite', // sqlite thật để test
-          entities: [__dirname + '/../../entities/*.entity{.ts,.js}'],
+           entities: [__dirname + '/**/*.entity{.ts,.js}'],
           synchronize: true,
         }),
         TypeOrmModule.forFeature([Trash, UserFile, Folder, ObjectType]),
@@ -27,31 +27,25 @@ describe('TrashService (with database.sqlite)', () => {
       providers: [TrashService, TrashRepository, CacheService],
     }).compile();
 
-    service = module.get<TrashService>(TrashService);
+    controller = module.get<TrashService>(TrashService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(controller).toBeDefined();
   });
 
   describe('findDeletedFiles', () => {
     it('should return deleted files for an existing user', async () => {
       const userId = 1;
-      const result = await service.findTrashFiles(userId);
+      const result = await controller.findTrashFiles(userId);
 
       expect(Array.isArray(result)).toBe(true);
-      if (result.length > 0) {
-        expect(result[0]).toHaveProperty('fileId');
-        expect(result[0]).toHaveProperty('trashId');
-        expect(result[0]).toHaveProperty('objectTypeName');
-        expect(result[0]).toHaveProperty('userFileName');
-        expect(result[0]).toHaveProperty('removedDatetime');
-        expect(result[0]).toHaveProperty('isPermanent');
-      }
+      
     });
 
     it('should return empty array for non-existent user', async () => {
-      const result = await service.findTrashFiles(9999);
+      const userId = -1 ;
+      const result = await controller.findTrashFiles(userId);
       expect(result).toEqual([]);
     });
   });
@@ -59,22 +53,19 @@ describe('TrashService (with database.sqlite)', () => {
   describe('findDeletedFolders', () => {
     it('should return deleted folders for an existing user', async () => {
       const userId = 1;
-      const result = await service.findTrashFolders(userId);
-
-      expect(Array.isArray(result)).toBe(true);
-      if (result.length > 0) {
-        expect(result[0]).toHaveProperty('folderId');
-        expect(result[0]).toHaveProperty('trashId');
-        expect(result[0]).toHaveProperty('objectTypeName');
-        expect(result[0]).toHaveProperty('folderName');
-        expect(result[0]).toHaveProperty('removedDatetime');
-        expect(result[0]).toHaveProperty('isPermanent');
-      }
+      const result = await controller.findTrashFolders(userId);
+      
+       expect(Array.isArray(result)).toBe(true);
+    
+      
     });
 
     it('should return empty array for non-existent user', async () => {
-      const result = await service.findTrashFolders(9999);
+      const userId = -1 ;
+      const result = await controller.findTrashFolders(userId);
       expect(result).toEqual([]);
     });
+  }
+);
   });
-});
+

@@ -7,7 +7,7 @@ import { Share } from '../../entities/share.entity';
 import { ShareRepository } from './share.repository';
 import { Account } from '../../entities/account.entity';
 import { SharedUser } from '../../entities/shareduser.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Share , SharedUser , Account])],

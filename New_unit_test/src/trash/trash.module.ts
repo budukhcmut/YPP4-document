@@ -6,7 +6,7 @@ import { TrashRepository } from './trash.repository';
 import { Trash } from 'src/entities/trash.entity';
 import { Account } from 'src/entities/account.entity';
 import { ObjectType } from 'src/entities/objecttype.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Trash , Account , ObjectType])],

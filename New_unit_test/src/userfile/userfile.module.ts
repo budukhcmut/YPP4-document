@@ -6,7 +6,7 @@ import { UserFile } from '../../entities/userfile.entity';
 import { UserFileRepository } from './userfile.repository';
 import { UserFileService } from './userfile.service';
 import { UserFileController } from './userfile.controller';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([UserFile])],

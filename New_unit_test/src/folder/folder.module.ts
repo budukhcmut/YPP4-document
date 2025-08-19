@@ -6,7 +6,7 @@ import { FolderController } from './folder.controller';
 import { FolderService } from './folder.service';
 import { Folder } from '../../entities/folder.entity' ;
 import { FolderRepository } from './folder.repository';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Folder]),],

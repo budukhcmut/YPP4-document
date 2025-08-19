@@ -8,7 +8,7 @@ import { Account } from '../../entities/account.entity';
 import { UserFile } from '../../entities/userfile.entity';
 import { Folder } from '../../entities/folder.entity';
 import { ActionRecent } from '../../entities/actionrecent.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports : 

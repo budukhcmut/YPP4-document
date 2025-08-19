@@ -7,7 +7,7 @@ import { AccountController } from './account.controller';
 import { AccountService } from './account.service';
 import { AccountRepository } from './account.repository';
 import { Account } from '../../entities/account.entity'; 
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 describe('AccountController (raw SQL query)', () => {
   let controller: AccountController;

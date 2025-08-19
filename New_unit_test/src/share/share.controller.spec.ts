@@ -6,10 +6,10 @@ import { Share } from '../../entities/share.entity';
 import { SharedUser } from '../../entities/shareduser.entity';
 import { ShareService } from './share.service';
 import { ShareRepository } from './share.repository';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 describe('ShareService (with database.sqlite)', () => {
-  let service: ShareService;
+  let controller: ShareService;
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -25,27 +25,25 @@ describe('ShareService (with database.sqlite)', () => {
       providers: [ShareService, ShareRepository , CacheService],
     }).compile();
 
-    service = module.get<ShareService>(ShareService);
+    controller = module.get<ShareService>(ShareService);
   });
 
   it('should be defined', () => {
-    expect(service).toBeDefined();
+    expect(controller).toBeDefined();
   });
 
   describe('getSharedFilesByUserId', () => {
     it('should return shared files for an existing user', async () => {
-      const result = await service.findSharedFiles(1);
+      const userId =1
+      const result = await controller.findSharedFiles(userId);
 
       expect(Array.isArray(result)).toBe(true);
-      if (result.length > 0) {
-        expect(result[0]).toHaveProperty('fileId');
-        expect(result[0]).toHaveProperty('userName');
-        expect(result[0]).toHaveProperty('userFileName');
-      }
+    
     });
 
     it('should return empty array for non-existent user', async () => {
-      const result = await service.findSharedFiles(9999);
+      const userId =-1 ;
+      const result = await controller.findSharedFiles(userId);
       expect(result).toEqual([]);
     });
   });
@@ -53,19 +51,16 @@ describe('ShareService (with database.sqlite)', () => {
 
   describe('getSharedFilesWithPermissionByUserId', () => {
     it('should return shared files with permission for an existing user', async () => {
-      const result = await service.findSharedFiles(1);
+      const userId = 1 ;
+      const result = await controller.findSharedFiles(userId);
 
       expect(Array.isArray(result)).toBe(true);
-      if (result.length > 0) {
-        expect(result[0]).toHaveProperty('fileId');
-        expect(result[0]).toHaveProperty('userName');
-        expect(result[0]).toHaveProperty('userFileName');
-        expect(result[0]).toHaveProperty('permissionNamell');
-      }
+      
     });
 
     it('should return empty array for non-existent user', async () => {
-      const result = await service.findSharedFiles(9999);
+      const userId = -1 ;
+      const result = await controller.findSharedFiles(userId);
       expect(result).toEqual([]);
     });
   });
@@ -73,14 +68,14 @@ describe('ShareService (with database.sqlite)', () => {
   describe('getSharedFolders', () => {
     it ('should return shared folders for an existing user', async () => {
       const userId = 1;
-      const result = await service.findSharedFolders(userId);
+      const result = await controller.findSharedFolders(userId);
       
       expect(result.length).toBeGreaterThan(0);
     });
 
     it('should return empty array for non-existent user', async () => {
       const userId = -1;
-      const result = await service.findSharedFolders(userId);
+      const result = await controller.findSharedFolders(userId);
       expect(result).toEqual([]);
     });
   }

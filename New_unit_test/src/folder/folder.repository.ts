@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 
 import { Folder } from '../../entities/folder.entity';
-import { CacheService } from '../../utils/cache.service'; 
+import { CacheService } from '../../common/utils/cache.service'; 
 import { MyFolderDto } from './dto/fullfolder.dto';
 
 
@@ -35,6 +35,7 @@ export class FolderRepository {
     ` , 
     [userId]);
 
+    this.cacheService.set( cacheKey , folders) ;
    return folders ;
 
     

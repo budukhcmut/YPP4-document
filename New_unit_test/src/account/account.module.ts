@@ -4,7 +4,7 @@ import { AccountRepository } from './account.repository';
 import { AccountService } from './account.service';
 import { AccountController } from './account.controller';
 import { Account } from '../../entities/account.entity';
-import { CacheService } from '../../utils/cache.service';
+import { CacheService } from '../../common/utils/cache.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Account])],
