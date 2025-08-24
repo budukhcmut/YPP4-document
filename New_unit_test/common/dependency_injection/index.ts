@@ -1,120 +1,110 @@
-enum Lifetime {
-  Transient,
-  Singleton,
-  Scoped,
+import 'reflect-metadata';
+
+export enum Scope {
+  SINGLETON = 'SINGLETON',
 }
 
-interface IScope extends Disposable {
-  resolve<T>(): T;
+export type Newable<T = unknown> = new (...args: unknown[]) => T;
+
+export interface ProviderInfo<T = unknown> {
+  instance?: T;
+  scope: Scope;
 }
 
-class SimpleContainer {
-  private readonly registrations: Map<
-    Function,
-    { implType: Function; lifetime: Lifetime }
-  > = new Map();
-  private readonly singletons: Map<Function, any> = new Map();
-  private readonly ctorCache: Map<Function, Function> = new Map();
+export const container = new Map<Newable, ProviderInfo>();
 
-  public register<TInterface, TImplementation extends TInterface>(
-    lifetime: Lifetime = Lifetime.Transient,
-  ): void {
-    this.registrations.set(TInterface, { implType: TImplementation, lifetime });
+export class Container {
+  static register(provider: Newable, scope: Scope = Scope.SINGLETON): void {
+    void (container.get(provider) ?? container.set(provider, { scope }));
   }
 
-  public registerImplementation<TImplementation>(
-    lifetime: Lifetime = Lifetime.Transient,
-  ): void {
-    this.registrations.set(TImplementation, {
-      implType: TImplementation,
-      lifetime,
-    });
-  }
-
-  public resolve<T>(): T {
-    return this.resolveInternal(T, null) as T;
-  }
-
-  public createScope(): IScope {
-    return new Scope(this);
-  }
-
-  private resolveInternal(type: Function, scope: Scope | null): any {
-    const entry = this.registrations.get(type);
-    if (!entry) {
-      throw new Error(`Type ${type.name} is not registered.`);
+  static resolve<T>(provider: Newable<T>): T {
+    const metadata = container.get(provider);
+    if (!metadata) {
+      throw new Error(`Class ${provider.name} is not registered`);
     }
 
-    switch (entry.lifetime) {
-      case Lifetime.Singleton:
-        const existing = this.singletons.get(type);
-        if (existing) {
-          return existing;
-        }
-        const instance = this.createInstance(entry.implType, scope);
-        this.singletons.set(type, instance);
-        return instance;
+    const { instance, scope } = metadata;
 
-      case Lifetime.Scoped:
-        if (!scope) {
-          throw new Error('Scoped service resolution requires an active scope');
-        }
-        return scope.getOrCreateScopedInstance(type, () =>
-          this.createInstance(entry.implType, scope),
-        );
-
-      case Lifetime.Transient:
-        return this.createInstance(entry.implType, scope);
-
-      default:
-        throw new Error('Unsupported lifetime');
+    if (scope === Scope.SINGLETON) {
+      if (!instance) {
+        const newInstance = Container.createInstance(provider);
+        container.set(provider, { instance: newInstance, scope });
+        return newInstance;
+      }
+      return instance as T;
     }
+
+    throw new Error('Unsupported scope');
   }
 
-  private createInstance(implType: Function, scope: Scope | null): any {
-    let ctor = this.ctorCache.get(implType);
-    if (!ctor) {
-      // Using Function.prototype to simulate constructor retrieval
-      ctor = implType;
-      this.ctorCache.set(implType, ctor);
-    }
+  private static createInstance<T>(provider: Newable<T>): T {
+    const metadata =
+      (Reflect.getMetadata('design:paramtypes', provider) as
+        | Newable[]
+        | undefined) || [];
 
-    // In TypeScript, we can't directly access constructor parameters like in C#
-    // We'll assume the constructor parameters are resolved through reflection-like mechanism
-    // For simplicity, we'll create an instance using the constructor
-    const instance = new (ctor as any)();
-    return instance;
+    const resolvedDeps = metadata.map((dep) => Container.resolve(dep));
+    return new provider(...resolvedDeps);
   }
 }
 
-class Scope implements IScope {
-  private readonly container: SimpleContainer;
-  private readonly scopedInstances: Map<Function, any> = new Map();
-  private disposed: boolean = false;
+export function Injectable(option?: { scope?: Scope }) {
+  return function (provider: Newable) {
+    const scope = option?.scope || Scope.SINGLETON;
+    Container.register(provider, scope);
+  };
+}
 
-  constructor(container: SimpleContainer) {
-    this.container = container;
-  }
-  [Symbol.dispose](): void {
-    this.disposed = true;
-    this.scopedInstances.clear();
-  }
+/**
+ * ------------------------
+ * Controller Decorators
+ * ------------------------
+ */
 
-  public resolve<T>(): T {
-    return this.container.resolveInternal(T, this) as T;
-  }
+const CONTROLLER_METADATA = Symbol('CONTROLLER_METADATA');
+const ROUTES_METADATA = Symbol('ROUTES_METADATA');
 
-  public getOrCreateScopedInstance(type: Function, factory: () => any): any {
-    if (this.disposed) {
-      throw new Error('Scope is disposed');
-    }
+export interface RouteDefinition {
+  path: string;
+  method: 'get' | 'post' | 'put' | 'delete';
+  handlerName: string | symbol;
+}
 
-    let instance = this.scopedInstances.get(type);
-    if (!instance) {
-      instance = factory();
-      this.scopedInstances.set(type, instance);
-    }
+export function Controller(prefix: string = ''): ClassDecorator {
+  return (target: any) => {
+    Reflect.defineMetadata(CONTROLLER_METADATA, prefix, target);
+    Container.register(target); // Controller cũng được quản lý bởi Container
+  };
+}
 
-    return instance;
-  }
+function createMethodDecorator(method: 'get' | 'post' | 'put' | 'delete') {
+  return (path: string = ''): MethodDecorator => {
+    return (target, propertyKey) => {
+      const routes: RouteDefinition[] =
+        Reflect.getMetadata(ROUTES_METADATA, target.constructor) || [];
+
+      routes.push({
+        path,
+        method,
+        handlerName: propertyKey,
+      });
+
+      Reflect.defineMetadata(ROUTES_METADATA, routes, target.constructor);
+    };
+  };
+}
+
+export const Get = createMethodDecorator('get');
+export const Post = createMethodDecorator('post');
+export const Put = createMethodDecorator('put');
+export const Delete = createMethodDecorator('delete');
+
+// helper để lấy metadata
+export function getControllerPrefix(target: any): string {
+  return Reflect.getMetadata(CONTROLLER_METADATA, target);
+}
+
+export function getRoutes(target: any): RouteDefinition[] {
+  return Reflect.getMetadata(ROUTES_METADATA, target) || [];
 }
